@@ -24,10 +24,12 @@ import {
   Coins,
   ArrowRightLeft,
   ShoppingBag,
+  AlertTriangle,
+  ExternalLink,
 } from 'lucide-react';
 
 export default function HomePage() {
-  const { summary, cashSummary, combinedCashFlow, triggerExportExcel } = useApp();
+  const { summary, cashSummary, combinedCashFlow, triggerExportExcel, missingTables } = useApp();
 
   // Top Module Selection
   const [activeModule, setActiveModule] = useState<MainModuleType>('URGENT_CALL');
@@ -125,6 +127,40 @@ export default function HomePage() {
         onOpenAddCashItem={handleOpenAddCashItem}
         onOpenSettings={() => setIsSettingsOpen(true)}
       />
+
+      {/* Missing Tables Notice Banner */}
+      {missingTables && missingTables.length > 0 && (
+        <div className="bg-amber-500/10 border-b border-amber-500/30 px-4 py-3 text-amber-200 text-xs">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0" />
+              <div>
+                <span className="font-bold text-white">ยังไม่พบตารางในฐานข้อมูล Supabase: </span>
+                <span>
+                  ตาราง [{missingTables.join(', ')}] ยังไม่ได้ถูกสร้าง กรุณานำ SQL ไปรันใน Supabase SQL Editor เพื่อเปิดใช้งานระบบ Realtime ให้เพื่อนๆ ซิงก์ข้อมูลตรงกัน
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 self-end sm:self-auto flex-shrink-0">
+              <button
+                onClick={() => setIsSettingsOpen(true)}
+                className="px-3 py-1.5 rounded-lg bg-amber-500 text-dark-950 font-bold hover:bg-amber-400 transition-colors"
+              >
+                ดูโค้ด SQL & คัดลอก
+              </button>
+              <a
+                href="https://supabase.com/dashboard/project/udvcayrzbrhatmhzpqiz/sql/new"
+                target="_blank"
+                rel="noreferrer"
+                className="px-3 py-1.5 rounded-lg bg-dark-800 text-amber-300 font-bold hover:bg-dark-700 border border-amber-500/30 transition-colors flex items-center gap-1"
+              >
+                <span>เปิด Supabase SQL Editor</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">

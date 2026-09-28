@@ -58,6 +58,7 @@ interface AppContextType {
   // Supabase & App State
   supabaseConfig: SupabaseConfig;
   isSupabaseConnected: boolean;
+  missingTables: string[];
   isLoading: boolean;
 
   // Urgent Call Actions
@@ -128,6 +129,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     enabled: false,
   });
   const [isSupabaseConnected, setIsSupabaseConnected] = useState(false);
+  const [missingTables, setMissingTables] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Confetti effect
@@ -270,17 +272,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           supabase.from('app_configs').select('*'),
         ]);
 
-        if (!eggErr && !physErr && !itemsErr && !salesErr && isMounted) {
+        const missing: string[] = [];
+        if (eggErr && (eggErr.code === 'PGRST205' || eggErr.code === '42P01' || eggErr.message?.includes('not find'))) {
+          missing.push('egg_sales');
+        }
+        if (physErr && (physErr.code === 'PGRST205' || physErr.code === '42P01' || physErr.message?.includes('not find'))) {
+          missing.push('physical_sales');
+        }
+        if (itemsErr && (itemsErr.code === 'PGRST205' || itemsErr.code === '42P01' || itemsErr.message?.includes('not find'))) {
+          missing.push('cash_items');
+        }
+        if (salesErr && (salesErr.code === 'PGRST205' || salesErr.code === '42P01' || salesErr.message?.includes('not find'))) {
+          missing.push('cash_sales');
+        }
+
+        if (missing.length > 0) {
+          if (isMounted) {
+            setMissingTables(missing);
+            setIsSupabaseConnected(false);
+          }
+          console.warn('⚠️ Supabase tables missing:', missing);
+          return;
+        }
+
+        if (isMounted) {
+          setMissingTables([]);
           setIsSupabaseConnected(true);
+        }
 
-          const isSupabaseEmpty =
-            (!remoteEggs || remoteEggs.length === 0) &&
-            (!remotePhys || remotePhys.length === 0) &&
-            (!remoteCashItems || remoteCashItems.length === 0) &&
-            (!remoteCashSales || remoteCashSales.length === 0);
+        const isSupabaseEmpty =
+          (!remoteEggs || remoteEggs.length === 0) &&
+          (!remotePhys || remotePhys.length === 0) &&
+          (!remoteCashItems || remoteCashItems.length === 0) &&
+          (!remoteCashSales || remoteCashSales.length === 0);
 
-          if (isSupabaseEmpty) {
-            // First time connecting to a fresh database: auto-seed from local data
+        if (isSupabaseEmpty) {
+          // First time connecting to a fresh database: auto-seed from local data
             console.log('⚡ Supabase database is empty. Auto-seeding initial data to Supabase...');
             const localEgg = localStorage.getItem(LOCAL_STORAGE_EGG_SALES);
             const currentEggs: EggSale[] = localEgg ? JSON.parse(localEgg) : SAMPLE_EGG_SALES;
@@ -453,7 +480,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               }
             }
           }
-        }
       } catch (err) {
         console.warn('Supabase connect check warning:', err);
         if (isMounted) setIsSupabaseConnected(false);
@@ -762,7 +788,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(LOCAL_STORAGE_EGG_SALES, JSON.stringify(updated));
 
       const supabase = getSupabaseClient();
-      if (supabase && isSupabaseConnected) {
+      if (supabase) {
         try {
           await supabase.from('egg_sales').insert([
             {
@@ -790,7 +816,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       return true;
     },
-    [eggSales, physicalSales, config, summary.isBreakeven, isSupabaseConnected, triggerConfettiEffect]
+    [eggSales, physicalSales, config, summary.isBreakeven, triggerConfettiEffect]
   );
 
   const updateEggSale = useCallback(
@@ -800,7 +826,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(LOCAL_STORAGE_EGG_SALES, JSON.stringify(updated));
 
       const supabase = getSupabaseClient();
-      if (supabase && isSupabaseConnected) {
+      if (supabase) {
         try {
           const mapped: any = {};
           if (partial.server !== undefined) mapped.server = partial.server;
@@ -820,7 +846,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return true;
     },
-    [eggSales, isSupabaseConnected]
+    [eggSales]
   );
 
   const deleteEggSale = useCallback(
@@ -830,7 +856,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(LOCAL_STORAGE_EGG_SALES, JSON.stringify(updated));
 
       const supabase = getSupabaseClient();
-      if (supabase && isSupabaseConnected) {
+      if (supabase) {
         try {
           await supabase.from('egg_sales').delete().eq('id', id);
         } catch (e) {
@@ -839,7 +865,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return true;
     },
-    [eggSales, isSupabaseConnected]
+    [eggSales]
   );
 
   const toggleEggSaleStatus = useCallback(
@@ -868,7 +894,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(LOCAL_STORAGE_PHYSICAL_SALES, JSON.stringify(updated));
 
       const supabase = getSupabaseClient();
-      if (supabase && isSupabaseConnected) {
+      if (supabase) {
         try {
           await supabase.from('physical_sales').insert([
             {
@@ -897,7 +923,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       return true;
     },
-    [eggSales, physicalSales, config, summary.isBreakeven, isSupabaseConnected, triggerConfettiEffect]
+    [eggSales, physicalSales, config, summary.isBreakeven, triggerConfettiEffect]
   );
 
   const updatePhysicalSale = useCallback(
@@ -907,7 +933,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(LOCAL_STORAGE_PHYSICAL_SALES, JSON.stringify(updated));
 
       const supabase = getSupabaseClient();
-      if (supabase && isSupabaseConnected) {
+      if (supabase) {
         try {
           const mapped: any = {};
           if (partial.category !== undefined) mapped.category = partial.category;
@@ -928,7 +954,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return true;
     },
-    [physicalSales, isSupabaseConnected]
+    [physicalSales]
   );
 
   const deletePhysicalSale = useCallback(
@@ -938,7 +964,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(LOCAL_STORAGE_PHYSICAL_SALES, JSON.stringify(updated));
 
       const supabase = getSupabaseClient();
-      if (supabase && isSupabaseConnected) {
+      if (supabase) {
         try {
           await supabase.from('physical_sales').delete().eq('id', id);
         } catch (e) {
@@ -947,7 +973,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return true;
     },
-    [physicalSales, isSupabaseConnected]
+    [physicalSales]
   );
 
   const togglePhysicalSaleStatus = useCallback(
@@ -976,7 +1002,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(updated));
 
       const supabase = getSupabaseClient();
-      if (supabase && isSupabaseConnected) {
+      if (supabase) {
         try {
           await supabase.from('cash_items').insert([
             {
@@ -984,8 +1010,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               name: newItem.name,
               category: newItem.category,
               server: newItem.server,
+              total_qty: newItem.totalQty ?? 0,
+              sold_qty: newItem.soldQty ?? 0,
               stock_qty: newItem.stockQty,
+              total_sale: newItem.totalSale ?? 0,
               target_price_per_unit: newItem.targetPricePerUnit,
+              remain_sale: newItem.remainSale ?? newItem.stockQty * newItem.targetPricePerUnit,
               note: newItem.note || '',
             },
           ]);
@@ -996,35 +1026,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       return true;
     },
-    [cashItems, isSupabaseConnected]
+    [cashItems]
   );
 
   const updateCashItem = useCallback(
     async (id: string, partial: Partial<CashItem>): Promise<boolean> => {
-      const updated = cashItems.map((item) => (item.id === id ? { ...item, ...partial } : item));
-      setCashItems(updated);
-      localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(updated));
+      let updatedItem: CashItem | undefined;
+      setCashItems((prev) => {
+        const next = prev.map((item) => {
+          if (item.id === id) {
+            const merged = { ...item, ...partial };
+            if (partial.stockQty !== undefined || partial.targetPricePerUnit !== undefined) {
+              const q = partial.stockQty !== undefined ? partial.stockQty : item.stockQty;
+              const p = partial.targetPricePerUnit !== undefined ? partial.targetPricePerUnit : item.targetPricePerUnit;
+              merged.remainSale = q * p;
+            }
+            updatedItem = merged;
+            return merged;
+          }
+          return item;
+        });
+        localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(next));
+        return next;
+      });
 
       const supabase = getSupabaseClient();
-      if (supabase && isSupabaseConnected) {
+      if (supabase) {
         try {
           const mapped: any = {};
           if (partial.name !== undefined) mapped.name = partial.name;
           if (partial.category !== undefined) mapped.category = partial.category;
           if (partial.server !== undefined) mapped.server = partial.server;
           if (partial.stockQty !== undefined) mapped.stock_qty = partial.stockQty;
+          if (partial.totalQty !== undefined) mapped.total_qty = partial.totalQty;
+          if (partial.soldQty !== undefined) mapped.sold_qty = partial.soldQty;
+          if (partial.totalSale !== undefined) mapped.total_sale = partial.totalSale;
           if (partial.targetPricePerUnit !== undefined)
             mapped.target_price_per_unit = partial.targetPricePerUnit;
+          if (updatedItem && updatedItem.remainSale !== undefined) {
+            mapped.remain_sale = updatedItem.remainSale;
+          }
           if (partial.note !== undefined) mapped.note = partial.note;
 
-          await supabase.from('cash_items').update(mapped).eq('id', id);
+          const { error } = await supabase.from('cash_items').update(mapped).eq('id', id);
+          if (error) {
+            console.error('Supabase update cash_item error:', error.message);
+          }
         } catch (e) {
           console.error('Supabase cash_items update error:', e);
         }
       }
       return true;
     },
-    [cashItems, isSupabaseConnected]
+    []
   );
 
   const deleteCashItem = useCallback(
@@ -1034,7 +1088,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(updated));
 
       const supabase = getSupabaseClient();
-      if (supabase && isSupabaseConnected) {
+      if (supabase) {
         try {
           await supabase.from('cash_items').delete().eq('id', id);
         } catch (e) {
@@ -1043,7 +1097,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return true;
     },
-    [cashItems, isSupabaseConnected]
+    [cashItems]
   );
 
   const adjustCashItemStock = useCallback(
@@ -1051,9 +1105,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const target = cashItems.find((i) => i.id === id);
       if (!target) return false;
       const nextQty = Math.max(0, target.stockQty + delta);
-      return await updateCashItem(id, { stockQty: nextQty });
+      const nextRemainSale = nextQty * target.targetPricePerUnit;
+
+      // 1. อัปเดต state ในเครื่องทันที (Optimistic Update)
+      setCashItems((prev) => {
+        const next = prev.map((i) =>
+          i.id === id
+            ? {
+                ...i,
+                stockQty: nextQty,
+                remainSale: nextRemainSale,
+              }
+            : i
+        );
+        localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(next));
+        return next;
+      });
+
+      // 2. ส่งค่าอัปเดตตรงไปยังตาราง cash_items ใน Supabase ทันที
+      const supabase = getSupabaseClient();
+      if (supabase) {
+        try {
+          const { error } = await supabase
+            .from('cash_items')
+            .update({
+              stock_qty: nextQty,
+              remain_sale: nextRemainSale,
+            })
+            .eq('id', id);
+
+          if (error) {
+            console.error('Supabase adjustCashItemStock error:', error.message);
+          }
+        } catch (e) {
+          console.error('Supabase adjustCashItemStock exception:', e);
+        }
+      }
+      return true;
     },
-    [cashItems, updateCashItem]
+    [cashItems]
   );
 
   // ----------------------------------------
@@ -1077,18 +1167,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const item = cashItems.find((i) => i.id === newSale.cashItemId);
         if (item) {
           const nextStock = Math.max(0, item.stockQty - newSale.quantity);
-          const updatedItems = cashItems.map((i) =>
-            i.id === item.id ? { ...i, stockQty: nextStock } : i
-          );
-          setCashItems(updatedItems);
-          localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(updatedItems));
+          const nextRemainSale = nextStock * item.targetPricePerUnit;
+          setCashItems((prev) => {
+            const next = prev.map((i) =>
+              i.id === item.id ? { ...i, stockQty: nextStock, remainSale: nextRemainSale } : i
+            );
+            localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(next));
+            return next;
+          });
 
           const supabase = getSupabaseClient();
-          if (supabase && isSupabaseConnected) {
+          if (supabase) {
             try {
               await supabase
                 .from('cash_items')
-                .update({ stock_qty: nextStock })
+                .update({ stock_qty: nextStock, remain_sale: nextRemainSale })
                 .eq('id', item.id);
             } catch (e) {
               console.error('Supabase stock deduction error:', e);
@@ -1099,7 +1192,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       // 3. Supabase insert sale
       const supabase = getSupabaseClient();
-      if (supabase && isSupabaseConnected) {
+      if (supabase) {
         try {
           await supabase.from('cash_sales').insert([
             {
@@ -1124,7 +1217,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       return true;
     },
-    [cashSales, cashItems, isSupabaseConnected]
+    [cashSales, cashItems]
   );
 
   const updateCashSale = useCallback(
@@ -1134,7 +1227,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(LOCAL_STORAGE_CASH_SALES, JSON.stringify(updated));
 
       const supabase = getSupabaseClient();
-      if (supabase && isSupabaseConnected) {
+      if (supabase) {
         try {
           const mapped: any = {};
           if (partial.itemName !== undefined) mapped.item_name = partial.itemName;
@@ -1155,7 +1248,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return true;
     },
-    [cashSales, isSupabaseConnected]
+    [cashSales]
   );
 
   const deleteCashSale = useCallback(
@@ -1165,7 +1258,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(LOCAL_STORAGE_CASH_SALES, JSON.stringify(updated));
 
       const supabase = getSupabaseClient();
-      if (supabase && isSupabaseConnected) {
+      if (supabase) {
         try {
           await supabase.from('cash_sales').delete().eq('id', id);
         } catch (e) {
@@ -1174,7 +1267,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return true;
     },
-    [cashSales, isSupabaseConnected]
+    [cashSales]
   );
 
   const toggleCashSaleStatus = useCallback(
@@ -1196,7 +1289,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(LOCAL_STORAGE_CONFIG, JSON.stringify(merged));
 
       const supabase = getSupabaseClient();
-      if (supabase && isSupabaseConnected) {
+      if (supabase) {
         supabase
           .from('app_configs')
           .upsert({ key: 'urgent_call_config', value: merged, updated_at: new Date().toISOString() })
@@ -1205,7 +1298,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       return merged;
     });
-  }, [isSupabaseConnected]);
+  }, []);
 
   const updateCashConfig = useCallback(async (newConfig: Partial<CashPortfolioConfig>) => {
     setCashConfig((prev) => {
@@ -1213,7 +1306,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(LOCAL_STORAGE_CASH_CONFIG, JSON.stringify(merged));
 
       const supabase = getSupabaseClient();
-      if (supabase && isSupabaseConnected) {
+      if (supabase) {
         supabase
           .from('app_configs')
           .upsert({ key: 'cash_portfolio_config', value: merged, updated_at: new Date().toISOString() })
@@ -1222,7 +1315,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       return merged;
     });
-  }, [isSupabaseConnected]);
+  }, []);
 
   const testConnection = useCallback(async () => {
     return await testSupabaseConnection();
@@ -1339,7 +1432,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(SAMPLE_CASH_ITEMS));
 
     const supabase = getSupabaseClient();
-    if (supabase && isSupabaseConnected) {
+    if (supabase) {
       try {
         await supabase.from('cash_items').upsert(
           SAMPLE_CASH_ITEMS.map((i) => ({
@@ -1360,14 +1453,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.error('Supabase sync cash items error:', e);
       }
     }
-  }, [isSupabaseConnected]);
+  }, []);
 
   const syncFromSalesLedgerPdf = useCallback(async () => {
     setCashSales(SAMPLE_CASH_SALES);
     localStorage.setItem(LOCAL_STORAGE_CASH_SALES, JSON.stringify(SAMPLE_CASH_SALES));
 
     const supabase = getSupabaseClient();
-    if (supabase && isSupabaseConnected) {
+    if (supabase) {
       try {
         await supabase.from('cash_sales').upsert(
           SAMPLE_CASH_SALES.map((s) => ({
@@ -1389,7 +1482,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.error('Supabase sync cash sales error:', e);
       }
     }
-  }, [isSupabaseConnected]);
+  }, []);
 
   const resetToSampleData = useCallback(async () => {
     setEggSales(SAMPLE_EGG_SALES);
@@ -1407,14 +1500,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(LOCAL_STORAGE_CASH_CONFIG, JSON.stringify(DEFAULT_CASH_PORTFOLIO_CONFIG));
 
     const supabase = getSupabaseClient();
-    if (supabase && isSupabaseConnected) {
+    if (supabase) {
       try {
         await uploadLocalToSupabase();
       } catch (e) {
         console.error('Supabase reset sample error:', e);
       }
     }
-  }, [isSupabaseConnected, uploadLocalToSupabase]);
+  }, [uploadLocalToSupabase]);
 
   const clearAllData = useCallback(async () => {
     setEggSales([]);
@@ -1425,7 +1518,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(LOCAL_STORAGE_CASH_SALES, JSON.stringify([]));
 
     const supabase = getSupabaseClient();
-    if (supabase && isSupabaseConnected) {
+    if (supabase) {
       try {
         await supabase.from('egg_sales').delete().neq('id', '___none___');
         await supabase.from('physical_sales').delete().neq('id', '___none___');
@@ -1434,7 +1527,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.error('Supabase clear error:', e);
       }
     }
-  }, [isSupabaseConnected]);
+  }, []);
 
   const importFromJson = useCallback((jsonData: any) => {
     if (jsonData.eggSales && Array.isArray(jsonData.eggSales)) {
@@ -1511,6 +1604,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Supabase & App
         supabaseConfig,
         isSupabaseConnected,
+        missingTables,
         isLoading,
 
         // Urgent Call Actions

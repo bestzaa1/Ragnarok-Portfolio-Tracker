@@ -6,57 +6,51 @@ export interface SupabaseConfig {
   enabled: boolean;
 }
 
+export const DEFAULT_SUPABASE_URL = 'https://udvcayrzbrhatmhzpqiz.supabase.co';
+export const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_Lk3_yjUrRqEMjU3eOhA9AQ_e3GdraGA';
+
 const STORAGE_KEY_CONFIG = 'roc_supabase_config';
 
 /**
- * อ่านค่าการตั้งค่า Supabase โดยให้ความสำคัญกับ .env.local เป็นอันดับแรก
- * (NEXT_PUBLIC_SUPABASE_URL และ NEXT_PUBLIC_SUPABASE_ANON_KEY)
- * หากไม่มีใน .env.local จึงจะอ่านจาก localStorage
+ * อ่านค่าการตั้งค่า Supabase โดยให้ความสำคัญกับ process.env (ทั้งในเครื่อง .env.local และบน Vercel)
+ * หากไม่มีหรือเปิดบนเครื่องเพื่อน จะมี default URL และ Anon Key ของโปรเจกต์รองรับเสมอ
+ * ทำให้ทุกคนที่เปิดลิงก์ Vercel เชื่อมต่อฐานข้อมูล Supabase เดียวกันได้ทันทีแบบ Realtime
  */
 export function getStoredSupabaseConfig(): SupabaseConfig {
   const envUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim();
   const envKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim();
 
-  // 1. ถ้ามีค่าใน .env.local และไม่ใช่ placeholder ให้เปิดใช้งาน Supabase ทันที
-  if (
-    envUrl &&
-    envKey &&
-    !envUrl.includes('your-project') &&
-    !envKey.includes('your-anon-key')
-  ) {
-    return {
-      url: envUrl,
-      anonKey: envKey,
-      enabled: true,
-    };
+  let url = envUrl;
+  let anonKey = envKey;
+
+  // 1. ถ้าไม่มีใน process.env หรือเป็น placeholder ให้ใช้ default ของโปรเจกต์
+  if (!url || url.includes('your-project')) {
+    url = DEFAULT_SUPABASE_URL;
+  }
+  if (!anonKey || anonKey.includes('your-anon-key')) {
+    anonKey = DEFAULT_SUPABASE_ANON_KEY;
   }
 
-  // 2. ถ้าทำงานฝั่ง Server และไม่มี env
-  if (typeof window === 'undefined') {
-    return {
-      url: envUrl,
-      anonKey: envKey,
-      enabled: Boolean(envUrl && envKey),
-    };
-  }
-
-  // 3. ฝั่ง Client: อ่านจาก LocalStorage เผื่อผู้ใช้ระบุผ่านหน้า Settings
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_CONFIG);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed.url && parsed.anonKey) {
-        return parsed;
+  // 2. ฝั่ง Client: ถ้าผู้ใช้เคยตั้งค่า custom ไว้ใน localStorage
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_CONFIG);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.url && parsed.anonKey && !parsed.url.includes('your-project')) {
+          url = parsed.url.trim();
+          anonKey = parsed.anonKey.trim();
+        }
       }
+    } catch (e) {
+      console.error('Failed to read stored supabase config from localStorage', e);
     }
-  } catch (e) {
-    console.error('Failed to read stored supabase config from localStorage', e);
   }
 
   return {
-    url: envUrl,
-    anonKey: envKey,
-    enabled: Boolean(envUrl && envKey),
+    url: url.trim(),
+    anonKey: anonKey.trim(),
+    enabled: true, // ปิดการใช้งาน LocalStorage Mode และเปิด Supabase Realtime เป็นโหมดหลักถาวร
   };
 }
 

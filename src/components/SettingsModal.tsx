@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
-import { SUPABASE_SQL_SCHEMA } from '@/lib/supabase';
+import { SUPABASE_SQL_SCHEMA, saveStoredSupabaseConfig, SupabaseConfig } from '@/lib/supabase';
 import {
   X,
   Settings,
@@ -98,7 +98,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   const [loanAmount, setLoanAmount] = useState(cashConfig.loanToUrgentCall);
   const [cashSavedMsg, setCashSavedMsg] = useState(false);
 
+  // ซิงก์ค่าการตั้งค่า Supabase และสถานะสวิตช์ทุกครั้งที่เปิด Modal หรือ config มีการเปลี่ยนแปลง
+  useEffect(() => {
+    if (isOpen) {
+      setSupaUrl(supabaseConfig.url || '');
+      setSupaKey(supabaseConfig.anonKey || '');
+      // ถ้าตรวจพบว่าเชื่อมต่อ Supabase Realtime สำเร็จ (Online) หรือ config เปิดอยู่ ให้สวิตช์เปิด (ON) สีเขียวโดยอัตโนมัติ
+      const isOnlineOrEnabled = isSupabaseConnected || supabaseConfig.enabled;
+      setSupaEnabled(isOnlineOrEnabled);
+    }
+  }, [isOpen, supabaseConfig.url, supabaseConfig.anonKey, supabaseConfig.enabled, isSupabaseConnected]);
+
   if (!isOpen) return null;
+
+  const handleToggleSupabase = async (checked: boolean) => {
+    setSupaEnabled(checked);
+    const updatedConfig: SupabaseConfig = {
+      url: supaUrl.trim() || supabaseConfig.url,
+      anonKey: supaKey.trim() || supabaseConfig.anonKey,
+      enabled: checked,
+    };
+    // บันทึกค่านั้นลงใน localStorage ทันที เพื่อให้จำสถานะการเปิด/ปิดไว้เสมอ ไม่เด้งกลับ
+    saveStoredSupabaseConfig(updatedConfig);
+    await updateSupabaseConfig(updatedConfig);
+  };
 
   const handleSaveSupabase = async () => {
     if (!isAdmin) {
@@ -106,11 +129,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
       return;
     }
     setSaveStatus('กำลังบันทึกและเชื่อมต่อ...');
-    await updateSupabaseConfig({
+    const updatedConfig: SupabaseConfig = {
       url: supaUrl.trim(),
       anonKey: supaKey.trim(),
       enabled: supaEnabled,
-    });
+    };
+    saveStoredSupabaseConfig(updatedConfig);
+    await updateSupabaseConfig(updatedConfig);
     setSaveStatus('บันทึกการตั้งค่าแล้ว! กำลังเชื่อมต่อ Realtime...');
     setTimeout(() => setSaveStatus(null), 3500);
   };
@@ -390,7 +415,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   <input
                     type="checkbox"
                     checked={supaEnabled}
-                    onChange={(e) => setSupaEnabled(e.target.checked)}
+                    onChange={(e) => handleToggleSupabase(e.target.checked)}
                     className="sr-only peer"
                   />
                   <div className="w-11 h-6 bg-dark-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>

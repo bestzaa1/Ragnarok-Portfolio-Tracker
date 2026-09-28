@@ -84,11 +84,19 @@ export const Header: React.FC<HeaderProps> = ({
                 className="inline-flex items-center gap-1.5 hover:underline cursor-pointer transition-colors"
                 title="คลิกเพื่อจัดการและตรวจสอบการเชื่อมต่อ Supabase Realtime"
               >
-                <span className="inline-flex items-center gap-1.5 text-emerald-400 text-xs font-semibold">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
-                  <Database className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Supabase Realtime (Online)</span>
-                </span>
+                {isSupabaseConnected ? (
+                  <span className="inline-flex items-center gap-1.5 text-emerald-400 text-xs font-semibold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
+                    <Database className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Supabase Realtime (Online)</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 text-slate-400 text-xs font-semibold">
+                    <span className="w-2 h-2 rounded-full bg-slate-500 inline-block" />
+                    <Database className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Supabase (Offline)</span>
+                  </span>
+                )}
               </button>
             </p>
           </div>

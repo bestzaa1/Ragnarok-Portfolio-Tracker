@@ -31,16 +31,28 @@ export function getStoredSupabaseConfig(): SupabaseConfig {
     anonKey = DEFAULT_SUPABASE_ANON_KEY;
   }
 
+  // ค่าเริ่มต้น: เปิดใช้งาน Supabase ถาวรเป็นค่าเริ่มต้น (Default to Enabled) เสมอ
+  let enabled = true;
+
   // 2. ฝั่ง Client: ถ้าผู้ใช้เคยตั้งค่า custom ไว้ใน localStorage
   if (typeof window !== 'undefined') {
     try {
       const raw = localStorage.getItem(STORAGE_KEY_CONFIG);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed.url && parsed.anonKey && !parsed.url.includes('your-project')) {
+        if (parsed.url && !parsed.url.includes('your-project')) {
           url = parsed.url.trim();
+        }
+        if (parsed.anonKey && !parsed.anonKey.includes('your-anon-key')) {
           anonKey = parsed.anonKey.trim();
         }
+        // จดจำสถานะเปิด/ปิด หากผู้ใช้เคยสลับสวิตช์
+        if (typeof parsed.enabled === 'boolean') {
+          enabled = parsed.enabled;
+        }
+      } else {
+        // หากเป็นการเข้าชมครั้งแรก ให้บันทึกสถานะ enabled: true ลง localStorage ทันที
+        localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify({ url, anonKey, enabled: true }));
       }
     } catch (e) {
       console.error('Failed to read stored supabase config from localStorage', e);
@@ -50,13 +62,18 @@ export function getStoredSupabaseConfig(): SupabaseConfig {
   return {
     url: url.trim(),
     anonKey: anonKey.trim(),
-    enabled: true, // ปิดการใช้งาน LocalStorage Mode และเปิด Supabase Realtime เป็นโหมดหลักถาวร
+    enabled,
   };
 }
 
 export function saveStoredSupabaseConfig(config: SupabaseConfig): void {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(config));
+  try {
+    localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(config));
+    document.cookie = `roc_supa_enabled=${config.enabled}; path=/; max-age=31536000; SameSite=Lax`;
+  } catch (e) {
+    console.error('Failed to save supabase config to storage', e);
+  }
   // ล้างแคชไคลเอนต์เพื่อให้สร้าง connection ใหม่ด้วยการตั้งค่าล่าสุด
   cachedClient = null;
   cachedConfigHash = '';

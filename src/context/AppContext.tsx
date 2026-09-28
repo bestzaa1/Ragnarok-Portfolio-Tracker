@@ -129,11 +129,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [cashSales, setCashSales] = useState<CashSale[]>([]);
   const [cashConfig, setCashConfig] = useState<CashPortfolioConfig>(DEFAULT_CASH_PORTFOLIO_CONFIG);
 
-  // Supabase & App State
-  const [supabaseConfig, setSupabaseConfigState] = useState<SupabaseConfig>({
-    url: '',
-    anonKey: '',
-    enabled: false,
+  // Supabase & App State - เปิดใช้งานถาวรเป็นค่าเริ่มต้น (Default to Enabled)
+  const [supabaseConfig, setSupabaseConfigState] = useState<SupabaseConfig>(() => {
+    return getStoredSupabaseConfig();
   });
   const [isSupabaseConnected, setIsSupabaseConnected] = useState(false);
   const [missingTables, setMissingTables] = useState<string[]>([]);
@@ -342,6 +340,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (isMounted) {
           setMissingTables([]);
           setIsSupabaseConnected(true);
+          // ซิงก์สถานะ: เมื่อเชื่อมต่อ Realtime สำเร็จ ให้ยืนยันสถานะ enabled: true เสมอ
+          setSupabaseConfigState((prev) => {
+            if (!prev.enabled) {
+              const updated = { ...prev, enabled: true };
+              saveStoredSupabaseConfig(updated);
+              return updated;
+            }
+            return prev;
+          });
         }
 
         const isSupabaseEmpty =

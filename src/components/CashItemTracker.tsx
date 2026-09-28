@@ -41,6 +41,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
   onOpenEditSale,
 }) => {
   const {
+    isAdmin,
     cashItems,
     cashSales,
     cashConfig,
@@ -282,18 +283,20 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
 
           {/* Top Right Remain Sale Badge */}
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => {
-                if (confirm('ต้องการซิงค์ข้อมูลให้ตรงตามชีตของแถมคงเหลือ (ยอดรวม ฿13,420.00) หรือไม่?')) {
-                  syncFromPromotionSheet();
-                }
-              }}
-              className="px-3 py-1.5 rounded-xl bg-dark-950/20 hover:bg-dark-950/40 text-dark-950 font-bold text-xs flex items-center gap-1.5 transition-colors border border-dark-950/20"
-              title="รีเซ็ต/ซิงค์ข้อมูลให้ตรงตามชีต 100%"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>ซิงค์ตามชีต (13,420)</span>
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => {
+                  if (confirm('ต้องการซิงค์ข้อมูลให้ตรงตามชีตของแถมคงเหลือ (ยอดรวม ฿13,420.00) หรือไม่?')) {
+                    syncFromPromotionSheet();
+                  }
+                }}
+                className="px-3 py-1.5 rounded-xl bg-dark-950/20 hover:bg-dark-950/40 text-dark-950 font-bold text-xs flex items-center gap-1.5 transition-colors border border-dark-950/20"
+                title="รีเซ็ต/ซิงค์ข้อมูลให้ตรงตามชีต 100%"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>ซิงค์ตามชีต (13,420)</span>
+              </button>
+            )}
 
             <div className="px-4 py-1.5 rounded-xl bg-dark-950 text-white font-black text-sm sm:text-base border border-amber-300/40 shadow-md">
               <span className="text-amber-400 mr-1.5 text-xs font-semibold uppercase">Remain Sale:</span>
@@ -368,14 +371,16 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
               />
             </div>
 
-            {/* + Add New Custom Item */}
-            <button
-              onClick={onOpenAddItem}
-              className="px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 text-slate-200 border border-dark-600 font-semibold flex items-center gap-1 transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5 text-amber-400" />
-              <span>เพิ่มแถวใหม่</span>
-            </button>
+            {/* + Add New Custom Item - Admin Only */}
+            {isAdmin && (
+              <button
+                onClick={onOpenAddItem}
+                className="px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 text-slate-200 border border-dark-600 font-semibold flex items-center gap-1 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5 text-amber-400" />
+                <span>เพิ่มแถวใหม่</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -404,13 +409,13 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                 <th className="py-2.5 px-3 font-bold text-right border-r border-[#265340]">
                   Remain Sale
                 </th>
-                <th className="py-2.5 px-3 font-bold text-center">Action</th>
+                {isAdmin && <th className="py-2.5 px-3 font-bold text-center">Action</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-dark-750">
               {filteredStockItems.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-500">
+                  <td colSpan={isAdmin ? 9 : 8} className="py-12 text-center text-slate-500">
                     <Package className="w-8 h-8 mx-auto mb-2 text-slate-600 opacity-60" />
                     <p className="text-sm">ไม่พบรายการสินค้าที่ตรงกับเงื่อนไข</p>
                   </td>
@@ -464,34 +469,44 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                         {item.soldQty !== undefined ? item.soldQty : 0}
                       </td>
 
-                      {/* Remain with Quick +/- adjust */}
+                      {/* Remain with Quick +/- adjust (Admin only buttons) */}
                       <td className="py-2.5 px-3 whitespace-nowrap text-center border-r border-dark-750">
-                        <div className="inline-flex items-center gap-1.5 bg-dark-900 border border-dark-700 rounded-lg px-2 py-0.5">
-                          <button
-                            onClick={() => adjustCashItemStock(item.id, -1)}
-                            disabled={item.stockQty <= 0}
-                            className="w-4 h-4 rounded bg-dark-750 hover:bg-rose-500 hover:text-white text-slate-400 flex items-center justify-center transition-colors disabled:opacity-30"
-                            title="ลดสต็อก 1"
-                          >
-                            <Minus className="w-2.5 h-2.5" />
-                          </button>
+                        {isAdmin ? (
+                          <div className="inline-flex items-center gap-1.5 bg-dark-900 border border-dark-700 rounded-lg px-2 py-0.5">
+                            <button
+                              onClick={() => adjustCashItemStock(item.id, -1)}
+                              disabled={item.stockQty <= 0}
+                              className="w-4 h-4 rounded bg-dark-750 hover:bg-rose-500 hover:text-white text-slate-400 flex items-center justify-center transition-colors disabled:opacity-30"
+                              title="ลดสต็อก 1"
+                            >
+                              <Minus className="w-2.5 h-2.5" />
+                            </button>
 
+                            <span
+                              className={`font-black min-w-[24px] text-center text-xs ${
+                                item.stockQty > 0 ? 'text-white' : 'text-slate-500'
+                              }`}
+                            >
+                              {item.stockQty}
+                            </span>
+
+                            <button
+                              onClick={() => adjustCashItemStock(item.id, 1)}
+                              className="w-4 h-4 rounded bg-dark-750 hover:bg-emerald-500 hover:text-white text-slate-400 flex items-center justify-center transition-colors"
+                              title="เพิ่มสต็อก 1"
+                            >
+                              <Plus className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        ) : (
                           <span
-                            className={`font-black min-w-[24px] text-center text-xs ${
+                            className={`font-black min-w-[28px] text-center text-xs px-2.5 py-1 rounded bg-dark-900 border border-dark-700/60 inline-block ${
                               item.stockQty > 0 ? 'text-white' : 'text-slate-500'
                             }`}
                           >
                             {item.stockQty}
                           </span>
-
-                          <button
-                            onClick={() => adjustCashItemStock(item.id, 1)}
-                            className="w-4 h-4 rounded bg-dark-750 hover:bg-emerald-500 hover:text-white text-slate-400 flex items-center justify-center transition-colors"
-                            title="เพิ่มสต็อก 1"
-                          >
-                            <Plus className="w-2.5 h-2.5" />
-                          </button>
-                        </div>
+                        )}
                       </td>
 
                       {/* Total Sale (Yellow highlight if zero like in sheet) */}
@@ -527,43 +542,45 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                         {remainSaleVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
 
-                      {/* Actions */}
-                      <td className="py-2.5 px-3 whitespace-nowrap text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <button
-                            onClick={() => onOpenSellItem(item)}
-                            disabled={item.stockQty <= 0}
-                            className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all ${
-                              item.stockQty > 0
-                                ? 'bg-emerald-500/20 hover:bg-emerald-500 hover:text-dark-950 text-emerald-300 border border-emerald-500/40'
-                                : 'bg-dark-750 text-slate-600 cursor-not-allowed'
-                            }`}
-                            title="ตัดขายรายการนี้"
-                          >
-                            ขาย
-                          </button>
+                      {/* Actions - Admin Only */}
+                      {isAdmin && (
+                        <td className="py-2.5 px-3 whitespace-nowrap text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => onOpenSellItem(item)}
+                              disabled={item.stockQty <= 0}
+                              className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all ${
+                                item.stockQty > 0
+                                  ? 'bg-emerald-500/20 hover:bg-emerald-500 hover:text-dark-950 text-emerald-300 border border-emerald-500/40'
+                                  : 'bg-dark-750 text-slate-600 cursor-not-allowed'
+                              }`}
+                              title="ตัดขายรายการนี้"
+                            >
+                              ขาย
+                            </button>
 
-                          <button
-                            onClick={() => onOpenEditItem(item)}
-                            className="p-1 rounded text-slate-400 hover:text-sky-300 hover:bg-dark-700 transition-colors"
-                            title="แก้ไข"
-                          >
-                            <Edit2 className="w-3 h-3" />
-                          </button>
+                            <button
+                              onClick={() => onOpenEditItem(item)}
+                              className="p-1 rounded text-slate-400 hover:text-sky-300 hover:bg-dark-700 transition-colors"
+                              title="แก้ไข"
+                            >
+                              <Edit2 className="w-3 h-3" />
+                            </button>
 
-                          <button
-                            onClick={() => {
-                              if (confirm(`ต้องการลบรายการ "${item.name}" หรือไม่?`)) {
-                                deleteCashItem(item.id);
-                              }
-                            }}
-                            className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-dark-700 transition-colors"
-                            title="ลบ"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </td>
+                            <button
+                              onClick={() => {
+                                if (confirm(`ต้องการลบรายการ "${item.name}" หรือไม่?`)) {
+                                  deleteCashItem(item.id);
+                                }
+                              }}
+                              className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-dark-700 transition-colors"
+                              title="ลบ"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })
@@ -616,27 +633,32 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
           </div>
 
           <div className="flex items-center flex-wrap gap-2.5">
-            {/* Sync from PDF Button */}
-            <button
-              onClick={() => {
-                if (confirm('ต้องการรีเซ็ต/ซิงค์ประวัติการขายให้ตรงตามไฟล์ PDF (60 รายการ, รวม ฿51,570.10) หรือไม่?')) {
-                  syncFromSalesLedgerPdf();
-                }
-              }}
-              className="px-3 py-1.5 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-300 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-dark-600 transition-colors shadow-sm"
-              title="รีเซ็ต/ซิงค์ข้อมูลยอดขายให้ตรงกับไฟล์ PDF 60 รายการ 100%"
-            >
-              <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
-              <span>ซิงค์ตาม PDF (60 รายการ)</span>
-            </button>
+            {/* Sync from PDF Button - Admin Only */}
+            {isAdmin && (
+              <button
+                onClick={() => {
+                  if (confirm('ต้องการรีเซ็ต/ซิงค์ประวัติการขายให้ตรงตามไฟล์ PDF (60 รายการ, รวม ฿51,570.10) หรือไม่?')) {
+                    syncFromSalesLedgerPdf();
+                  }
+                }}
+                className="px-3 py-1.5 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-300 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-dark-600 transition-colors shadow-sm"
+                title="รีเซ็ต/ซิงค์ข้อมูลยอดขายให้ตรงกับไฟล์ PDF 60 รายการ 100%"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                <span>ซิงค์ตาม PDF (60 รายการ)</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => onOpenSellItem()}
-              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-dark-950 font-bold text-xs flex items-center gap-1.5 shadow-green-glow"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>+ บันทึกการขาย Cash Item</span>
-            </button>
+            {/* + Add Sale - Admin Only */}
+            {isAdmin && (
+              <button
+                onClick={() => onOpenSellItem()}
+                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-dark-950 font-bold text-xs flex items-center gap-1.5 shadow-green-glow"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>+ บันทึกการขาย Cash Item</span>
+              </button>
+            )}
 
             {/* Server Filter */}
             <select
@@ -689,13 +711,13 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                 <th className="py-3 px-4 font-semibold text-center">สถานะชำระเงิน</th>
                 <th className="py-3 px-4 font-semibold">วันที่ / เวลา</th>
                 <th className="py-3 px-4 font-semibold">หมายเหตุ</th>
-                <th className="py-3 px-4 font-semibold text-center">จัดการ</th>
+                {isAdmin && <th className="py-3 px-4 font-semibold text-center">จัดการ</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-dark-750">
               {filteredSales.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="py-12 text-center text-slate-500">
+                  <td colSpan={isAdmin ? 11 : 10} className="py-12 text-center text-slate-500">
                     <ShoppingBag className="w-8 h-8 mx-auto mb-2 text-slate-600 opacity-60" />
                     <p className="text-sm">ไม่พบรายการขายตามเงื่อนไขที่เลือก</p>
                   </td>
@@ -749,29 +771,51 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                       ฿{sale.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
 
-                    {/* Status Button (Toggle 1-Click) */}
+                    {/* Status Button (Toggle 1-Click for Admin, static badge for Viewer) */}
                     <td className="py-3 px-4 text-center whitespace-nowrap">
-                      <button
-                        onClick={() => toggleCashSaleStatus(sale.id)}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                          sale.status === 'Clear'
-                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25'
-                            : 'bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25'
-                        }`}
-                        title="คลิกเพื่อสลับสถานะทันที"
-                      >
-                        {sale.status === 'Clear' ? (
-                          <>
-                            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                            <span>Clear</span>
-                          </>
-                        ) : (
-                          <>
-                            <Clock className="w-3 h-3 text-amber-400" />
-                            <span>Pending</span>
-                          </>
-                        )}
-                      </button>
+                      {isAdmin ? (
+                        <button
+                          onClick={() => toggleCashSaleStatus(sale.id)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                            sale.status === 'Clear'
+                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25'
+                              : 'bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25'
+                          }`}
+                          title="คลิกเพื่อสลับสถานะทันที"
+                        >
+                          {sale.status === 'Clear' ? (
+                            <>
+                              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                              <span>Clear</span>
+                            </>
+                          ) : (
+                            <>
+                              <Clock className="w-3 h-3 text-amber-400" />
+                              <span>Pending</span>
+                            </>
+                          )}
+                        </button>
+                      ) : (
+                        <div
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
+                            sale.status === 'Clear'
+                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                              : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                          }`}
+                        >
+                          {sale.status === 'Clear' ? (
+                            <>
+                              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                              <span>Clear</span>
+                            </>
+                          ) : (
+                            <>
+                              <Clock className="w-3 h-3 text-amber-400" />
+                              <span>Pending</span>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </td>
 
                     {/* Date */}
@@ -790,29 +834,31 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                       {sale.note || '-'}
                     </td>
 
-                    {/* Actions */}
-                    <td className="py-3 px-4 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-1">
-                        <button
-                          onClick={() => onOpenEditSale(sale)}
-                          className="p-1 rounded text-slate-400 hover:text-sky-300 hover:bg-dark-700 transition-colors"
-                          title="แก้ไข"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(`ต้องการลบรายการขายของ "${sale.customerName}" หรือไม่?`)) {
-                              deleteCashSale(sale.id);
-                            }
-                          }}
-                          className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-dark-700 transition-colors"
-                          title="ลบ"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
+                    {/* Actions - Admin Only */}
+                    {isAdmin && (
+                      <td className="py-3 px-4 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => onOpenEditSale(sale)}
+                            className="p-1 rounded text-slate-400 hover:text-sky-300 hover:bg-dark-700 transition-colors"
+                            title="แก้ไข"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`ต้องการลบรายการขายของ "${sale.customerName}" หรือไม่?`)) {
+                                deleteCashSale(sale.id);
+                              }
+                            }}
+                            className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-dark-700 transition-colors"
+                            title="ลบ"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

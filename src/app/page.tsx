@@ -13,6 +13,7 @@ import { QuickSaleModal, SaleModalType } from '@/components/QuickSaleModal';
 import { AddEditCashItemModal } from '@/components/AddEditCashItemModal';
 import { CashSaleModal } from '@/components/CashSaleModal';
 import { SettingsModal } from '@/components/SettingsModal';
+import { AdminLoginModal } from '@/components/AdminLoginModal';
 import { EggSale, PhysicalSale, ServerType, CashItem, CashSale } from '@/types';
 import {
   Egg,
@@ -29,10 +30,13 @@ import {
 } from 'lucide-react';
 
 export default function HomePage() {
-  const { summary, cashSummary, combinedCashFlow, triggerExportExcel, missingTables } = useApp();
+  const { summary, cashSummary, combinedCashFlow, triggerExportExcel, missingTables, isAdmin } = useApp();
 
   // Top Module Selection
   const [activeModule, setActiveModule] = useState<MainModuleType>('URGENT_CALL');
+
+  // Admin Login Modal
+  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
 
   // Urgent Call Sub-Navigation tabs
   const [activeUrgentTab, setActiveUrgentTab] = useState<'EGGS' | 'PHYSICAL' | 'ALL_SALES'>('EGGS');
@@ -126,6 +130,7 @@ export default function HomePage() {
         onOpenCashSale={() => handleOpenSellItem()}
         onOpenAddCashItem={handleOpenAddCashItem}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
       />
 
       {/* Missing Tables Notice Banner */}
@@ -292,18 +297,20 @@ export default function HomePage() {
         </div>
       </footer>
 
-      {/* Floating Action Button for Mobile */}
-      <button
-        onClick={() => {
-          if (activeModule === 'URGENT_CALL') handleOpenGeneralQuickSale();
-          else if (activeModule === 'CASH_ITEM') handleOpenSellItem();
-          else handleOpenGeneralQuickSale();
-        }}
-        className="sm:hidden fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-dark-950 shadow-glow flex items-center justify-center font-bold"
-        title="บันทึกด่วน"
-      >
-        <PlusCircle className="w-7 h-7 stroke-[2.5]" />
-      </button>
+      {/* Floating Action Button for Mobile - Admin Only */}
+      {isAdmin && (
+        <button
+          onClick={() => {
+            if (activeModule === 'URGENT_CALL') handleOpenGeneralQuickSale();
+            else if (activeModule === 'CASH_ITEM') handleOpenSellItem();
+            else handleOpenGeneralQuickSale();
+          }}
+          className="sm:hidden fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-dark-950 shadow-glow flex items-center justify-center font-bold"
+          title="บันทึกด่วน"
+        >
+          <PlusCircle className="w-7 h-7 stroke-[2.5]" />
+        </button>
+      )}
 
       {/* Modals */}
       <QuickSaleModal
@@ -342,6 +349,12 @@ export default function HomePage() {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+      />
+
+      {/* Admin Login Modal */}
+      <AdminLoginModal
+        isOpen={isAdminLoginOpen}
+        onClose={() => setIsAdminLoginOpen(false)}
       />
     </div>
   );

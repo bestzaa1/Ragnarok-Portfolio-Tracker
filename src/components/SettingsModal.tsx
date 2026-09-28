@@ -34,6 +34,7 @@ interface SettingsModalProps {
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const {
+    isAdmin,
     config,
     updateConfig,
     cashConfig,
@@ -91,6 +92,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   if (!isOpen) return null;
 
   const handleSaveSupabase = async () => {
+    if (!isAdmin) {
+      alert('จำเป็นต้องเข้าสู่ระบบ 🔑 Admin Mode ก่อนเพื่อบันทึกการตั้งค่าฐานข้อมูล');
+      return;
+    }
     setSaveStatus('กำลังบันทึกและเชื่อมต่อ...');
     await updateSupabaseConfig({
       url: supaUrl.trim(),
@@ -133,6 +138,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   };
 
   const handleUploadToCloud = async () => {
+    if (!isAdmin) {
+      alert('จำเป็นต้องเข้าสู่ระบบ 🔑 Admin Mode ก่อนเพื่ออัปโหลดข้อมูล');
+      return;
+    }
     if (
       !confirm(
         'ต้องการนำข้อมูลที่อยู่ในเบราว์เซอร์ปัจจุบัน (ยอดขายไข่, สต็อก 22 รายการ, ยอดขาย 60 รายการ) อัปโหลดขึ้น Supabase ใช่หรือไม่?'
@@ -164,6 +173,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
   const handleSaveCosts = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) {
+      alert('จำเป็นต้องเข้าสู่ระบบ 🔑 Admin Mode ก่อนเพื่อบันทึกโครงสร้างต้นทุน');
+      return;
+    }
     updateConfig({
       figureCostTotal: Number(figureCost),
       figureBoxCount: Number(figureBoxes),
@@ -179,6 +192,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
   const handleSaveCashPortfolio = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) {
+      alert('จำเป็นต้องเข้าสู่ระบบ 🔑 Admin Mode ก่อนเพื่อบันทึกพอร์ตเติมเงิน');
+      return;
+    }
     updateCashConfig({
       initialInvestment: Number(cashInvestment),
       initialCashSales: Number(cashSalesInit),
@@ -191,6 +208,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isAdmin) {
+      alert('จำเป็นต้องเข้าสู่ระบบ 🔑 Admin Mode ก่อนเพื่อนำเข้าข้อมูลสำรอง');
+      return;
+    }
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
@@ -219,7 +240,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         </button>
 
         {/* Modal Header */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
             <Settings className="w-5 h-5" />
           </div>
@@ -230,6 +251,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             </p>
           </div>
         </div>
+
+        {/* Viewer Mode Notice Banner */}
+        {!isAdmin && (
+          <div className="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <span>โหมด Viewer (ดูได้อย่างเดียว): สามารถดูข้อมูลและทดสอบการเชื่อมต่อได้ แต่การบันทึกแก้ไขต้นทุนและรีเซ็ตข้อมูลต้องเข้าสู่ระบบผ่าน 🔑 Admin Mode ก่อน</span>
+          </div>
+        )}
 
         {/* Navigation Tabs */}
         <div className="flex border-b border-dark-750 mb-5 gap-2 overflow-x-auto">
@@ -755,6 +784,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               <button
                 type="button"
                 onClick={() => {
+                  if (!isAdmin) {
+                    alert('จำเป็นต้องเข้าสู่ระบบ 🔑 Admin Mode ก่อนเพื่อโหลดข้อมูลตัวอย่าง');
+                    return;
+                  }
                   if (confirm('ต้องการโหลดข้อมูลตัวอย่างสำหรับทดสอบระบบหรือไม่? (ข้อมูลปัจจุบันจะถูกแทนที่)')) {
                     resetToSampleData();
                     alert('โหลดข้อมูลตัวอย่างเรียบร้อยแล้ว!');
@@ -778,6 +811,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               <button
                 type="button"
                 onClick={() => {
+                  if (!isAdmin) {
+                    alert('จำเป็นต้องเข้าสู่ระบบ 🔑 Admin Mode ก่อนเพื่อล้างข้อมูล');
+                    return;
+                  }
                   if (confirm('คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลการขายทั้งหมด? (ไม่สามารถกู้คืนได้)')) {
                     clearAllData();
                     alert('ล้างข้อมูลการขายทั้งหมดเรียบร้อยแล้ว');

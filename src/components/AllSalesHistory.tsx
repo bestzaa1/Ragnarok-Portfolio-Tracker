@@ -46,6 +46,7 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
   onEditPhysical,
 }) => {
   const {
+    isAdmin,
     eggSales,
     physicalSales,
     deleteEggSale,
@@ -233,13 +234,13 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                 <th className="py-3 px-4 font-semibold text-center">สถานะชำระเงิน</th>
                 <th className="py-3 px-4 font-semibold">วันที่ / เวลา</th>
                 <th className="py-3 px-4 font-semibold">หมายเหตุ</th>
-                <th className="py-3 px-4 font-semibold text-center">จัดการ</th>
+                {isAdmin && <th className="py-3 px-4 font-semibold text-center">จัดการ</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-dark-750">
               {filteredList.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-slate-500">
+                  <td colSpan={isAdmin ? 10 : 9} className="py-12 text-center text-slate-500">
                     <History className="w-8 h-8 mx-auto mb-2 text-slate-600 opacity-60" />
                     <p className="text-sm">ไม่พบประวัติรายการขาย</p>
                   </td>
@@ -296,32 +297,54 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                       ฿{item.totalAmount.toLocaleString()}
                     </td>
 
-                    {/* Status */}
+                    {/* Status (Toggle 1-Click for Admin, static for Viewer) */}
                     <td className="py-3 px-4 text-center whitespace-nowrap">
-                      <button
-                        onClick={() => {
-                          if (item.originalEgg) toggleEggSaleStatus(item.originalEgg.id);
-                          if (item.originalPhys) togglePhysicalSaleStatus(item.originalPhys.id);
-                        }}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                          item.status === 'Clear'
-                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25'
-                            : 'bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25'
-                        }`}
-                        title="คลิกเพื่อสลับสถานะทันที"
-                      >
-                        {item.status === 'Clear' ? (
-                          <>
-                            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                            <span>Clear</span>
-                          </>
-                        ) : (
-                          <>
-                            <Clock className="w-3 h-3 text-amber-400" />
-                            <span>Pending</span>
-                          </>
-                        )}
-                      </button>
+                      {isAdmin ? (
+                        <button
+                          onClick={() => {
+                            if (item.originalEgg) toggleEggSaleStatus(item.originalEgg.id);
+                            if (item.originalPhys) togglePhysicalSaleStatus(item.originalPhys.id);
+                          }}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                            item.status === 'Clear'
+                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25'
+                              : 'bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25'
+                          }`}
+                          title="คลิกเพื่อสลับสถานะทันที"
+                        >
+                          {item.status === 'Clear' ? (
+                            <>
+                              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                              <span>Clear</span>
+                            </>
+                          ) : (
+                            <>
+                              <Clock className="w-3 h-3 text-amber-400" />
+                              <span>Pending</span>
+                            </>
+                          )}
+                        </button>
+                      ) : (
+                        <div
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
+                            item.status === 'Clear'
+                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                              : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                          }`}
+                        >
+                          {item.status === 'Clear' ? (
+                            <>
+                              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                              <span>Clear</span>
+                            </>
+                          ) : (
+                            <>
+                              <Clock className="w-3 h-3 text-amber-400" />
+                              <span>Pending</span>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </td>
 
                     {/* Date */}
@@ -340,33 +363,35 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                       {item.note || '-'}
                     </td>
 
-                    {/* Actions */}
-                    <td className="py-3 px-4 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-1">
-                        <button
-                          onClick={() => {
-                            if (item.originalEgg) onEditEgg(item.originalEgg);
-                            if (item.originalPhys) onEditPhysical(item.originalPhys);
-                          }}
-                          className="p-1 rounded text-slate-400 hover:text-amber-300 hover:bg-dark-700 transition-colors"
-                          title="แก้ไข"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(`ต้องการลบรายการของ "${item.customerName}" หรือไม่?`)) {
-                              if (item.originalEgg) deleteEggSale(item.originalEgg.id);
-                              if (item.originalPhys) deletePhysicalSale(item.originalPhys.id);
-                            }
-                          }}
-                          className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-dark-700 transition-colors"
-                          title="ลบ"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
+                    {/* Actions - Admin Only */}
+                    {isAdmin && (
+                      <td className="py-3 px-4 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => {
+                              if (item.originalEgg) onEditEgg(item.originalEgg);
+                              if (item.originalPhys) onEditPhysical(item.originalPhys);
+                            }}
+                            className="p-1 rounded text-slate-400 hover:text-amber-300 hover:bg-dark-700 transition-colors"
+                            title="แก้ไข"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`ต้องการลบรายการของ "${item.customerName}" หรือไม่?`)) {
+                                if (item.originalEgg) deleteEggSale(item.originalEgg.id);
+                                if (item.originalPhys) deletePhysicalSale(item.originalPhys.id);
+                              }
+                            }}
+                            className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-dark-700 transition-colors"
+                            title="ลบ"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

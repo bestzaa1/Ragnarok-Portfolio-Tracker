@@ -13,6 +13,10 @@ import {
   Coins,
   ArrowRightLeft,
   ShoppingBag,
+  ShieldCheck,
+  KeyRound,
+  LogOut,
+  Eye,
 } from 'lucide-react';
 
 export type MainModuleType = 'URGENT_CALL' | 'CASH_ITEM' | 'CASH_FLOW';
@@ -24,6 +28,7 @@ interface HeaderProps {
   onOpenCashSale: () => void;
   onOpenAddCashItem: () => void;
   onOpenSettings: () => void;
+  onOpenAdminLogin: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -33,8 +38,11 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCashSale,
   onOpenAddCashItem,
   onOpenSettings,
+  onOpenAdminLogin,
 }) => {
   const {
+    isAdmin,
+    logoutAdmin,
     isSupabaseConnected,
     supabaseConfig,
     summary,
@@ -116,8 +124,41 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="hidden sm:inline">ตั้งค่า</span>
           </button>
 
-          {/* Adaptive Action Buttons */}
-          {activeModule === 'URGENT_CALL' && (
+          {/* Admin Role Status & Unlock Button */}
+          {isAdmin ? (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-400 font-semibold shadow-green-glow">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span className="hidden sm:inline">Admin Mode</span>
+              </div>
+              <button
+                onClick={logoutAdmin}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-dark-800 text-rose-300 border border-rose-500/30 hover:bg-rose-500/10 hover:border-rose-500/50 transition-all"
+                title="ออกจากระบบ Admin Mode (กลับเป็น Viewer)"
+              >
+                <LogOut className="w-3.5 h-3.5 text-rose-400" />
+                <span className="hidden sm:inline">ออกจากระบบ</span>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-dark-800/90 border border-dark-600 text-xs text-slate-400">
+                <Eye className="w-3.5 h-3.5 text-slate-400" />
+                <span>Viewer (ดูอย่างเดียว)</span>
+              </div>
+              <button
+                onClick={onOpenAdminLogin}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-lg bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-dark-950 shadow-glow hover:brightness-110 active:scale-95 transition-all"
+                title="คลิกเพื่อปลดล็อก Admin Mode สำหรับจัดการข้อมูลและสต็อก"
+              >
+                <KeyRound className="w-4 h-4 stroke-[2.5]" />
+                <span>🔑 Admin Mode</span>
+              </button>
+            </div>
+          )}
+
+          {/* Adaptive Action Buttons - Only in Admin Mode */}
+          {isAdmin && activeModule === 'URGENT_CALL' && (
             <button
               onClick={onOpenQuickSaleUrgentCall}
               className="inline-flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-bold rounded-lg bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-dark-950 shadow-glow hover:shadow-amber-500/40 hover:brightness-110 active:scale-95 transition-all"
@@ -127,7 +168,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {activeModule === 'CASH_ITEM' && (
+          {isAdmin && activeModule === 'CASH_ITEM' && (
             <div className="flex items-center gap-2">
               <button
                 onClick={onOpenAddCashItem}

@@ -61,6 +61,11 @@ interface AppContextType {
   missingTables: string[];
   isLoading: boolean;
 
+  // Role & Admin Permissions
+  isAdmin: boolean;
+  loginAdmin: (password: string) => boolean;
+  logoutAdmin: () => void;
+
   // Urgent Call Actions
   addEggSale: (sale: Omit<EggSale, 'id' | 'createdAt'>) => Promise<boolean>;
   updateEggSale: (id: string, sale: Partial<EggSale>) => Promise<boolean>;
@@ -131,6 +136,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isSupabaseConnected, setIsSupabaseConnected] = useState(false);
   const [missingTables, setMissingTables] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Role & Admin Permission (Default: Viewer)
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    try {
+      const savedAuth = sessionStorage.getItem('roc_admin_authenticated');
+      if (savedAuth === 'true') {
+        setIsAdmin(true);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const loginAdmin = useCallback((password: string): boolean => {
+    const adminPass = (process.env.NEXT_PUBLIC_ADMIN_PASSWORD || '8888').trim();
+    if (password.trim() === adminPass) {
+      setIsAdmin(true);
+      try {
+        sessionStorage.setItem('roc_admin_authenticated', 'true');
+      } catch {
+        // ignore
+      }
+      return true;
+    }
+    return false;
+  }, []);
+
+  const logoutAdmin = useCallback(() => {
+    setIsAdmin(false);
+    try {
+      sessionStorage.removeItem('roc_admin_authenticated');
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Confetti effect
   const triggerConfettiEffect = useCallback(() => {
@@ -1606,6 +1648,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isSupabaseConnected,
         missingTables,
         isLoading,
+
+        // Role & Admin Permissions
+        isAdmin,
+        loginAdmin,
+        logoutAdmin,
 
         // Urgent Call Actions
         addEggSale,

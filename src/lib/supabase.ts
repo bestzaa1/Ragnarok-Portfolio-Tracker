@@ -237,20 +237,54 @@ ALTER TABLE public.cash_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cash_sales ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.app_configs ENABLE ROW LEVEL SECURITY;
 
--- นโยบาย RLS สำหรับ anon / public (อ่าน เขียน อัปเดต ลบ ได้อิสระ)
+-- สิทธิ์การเข้าถึงระดับ Schema และ Tables สำหรับ anon, authenticated, service_role
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role;
+
+-- 1. นโยบาย RLS สำหรับ egg_sales
 DROP POLICY IF EXISTS "Allow anon all on egg_sales" ON public.egg_sales;
+DROP POLICY IF EXISTS "Allow public select on egg_sales" ON public.egg_sales;
+DROP POLICY IF EXISTS "Allow public insert on egg_sales" ON public.egg_sales;
+DROP POLICY IF EXISTS "Allow public update on egg_sales" ON public.egg_sales;
+DROP POLICY IF EXISTS "Allow public delete on egg_sales" ON public.egg_sales;
 CREATE POLICY "Allow anon all on egg_sales" ON public.egg_sales FOR ALL TO public USING (true) WITH CHECK (true);
 
+-- 2. นโยบาย RLS สำหรับ physical_sales
 DROP POLICY IF EXISTS "Allow anon all on physical_sales" ON public.physical_sales;
+DROP POLICY IF EXISTS "Allow public select on physical_sales" ON public.physical_sales;
+DROP POLICY IF EXISTS "Allow public insert on physical_sales" ON public.physical_sales;
+DROP POLICY IF EXISTS "Allow public update on physical_sales" ON public.physical_sales;
+DROP POLICY IF EXISTS "Allow public delete on physical_sales" ON public.physical_sales;
 CREATE POLICY "Allow anon all on physical_sales" ON public.physical_sales FOR ALL TO public USING (true) WITH CHECK (true);
 
+-- 3. นโยบาย RLS สำหรับ cash_items
 DROP POLICY IF EXISTS "Allow anon all on cash_items" ON public.cash_items;
+DROP POLICY IF EXISTS "Allow public select on cash_items" ON public.cash_items;
+DROP POLICY IF EXISTS "Allow public insert on cash_items" ON public.cash_items;
+DROP POLICY IF EXISTS "Allow public update on cash_items" ON public.cash_items;
+DROP POLICY IF EXISTS "Allow public delete on cash_items" ON public.cash_items;
 CREATE POLICY "Allow anon all on cash_items" ON public.cash_items FOR ALL TO public USING (true) WITH CHECK (true);
 
+-- 4. นโยบาย RLS สำหรับ cash_sales
 DROP POLICY IF EXISTS "Allow anon all on cash_sales" ON public.cash_sales;
+DROP POLICY IF EXISTS "Allow public select on cash_sales" ON public.cash_sales;
+DROP POLICY IF EXISTS "Allow public insert on cash_sales" ON public.cash_sales;
+DROP POLICY IF EXISTS "Allow public update on cash_sales" ON public.cash_sales;
+DROP POLICY IF EXISTS "Allow public delete on cash_sales" ON public.cash_sales;
 CREATE POLICY "Allow anon all on cash_sales" ON public.cash_sales FOR ALL TO public USING (true) WITH CHECK (true);
 
+-- 5. นโยบาย RLS สำหรับ app_configs
 DROP POLICY IF EXISTS "Allow anon all on app_configs" ON public.app_configs;
+DROP POLICY IF EXISTS "Allow public select on app_configs" ON public.app_configs;
+DROP POLICY IF EXISTS "Allow public insert on app_configs" ON public.app_configs;
+DROP POLICY IF EXISTS "Allow public update on app_configs" ON public.app_configs;
+DROP POLICY IF EXISTS "Allow public delete on app_configs" ON public.app_configs;
 CREATE POLICY "Allow anon all on app_configs" ON public.app_configs FOR ALL TO public USING (true) WITH CHECK (true);
 
 -- ====================================================================

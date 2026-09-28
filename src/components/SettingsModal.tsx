@@ -25,6 +25,8 @@ import {
   FileCode2,
   ExternalLink,
   Loader2,
+  Sprout,
+  Sparkles,
 } from 'lucide-react';
 
 interface SettingsModalProps {
@@ -45,6 +47,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     uploadLocalToSupabase,
     testConnection,
     resetToSampleData,
+    seedInitialDataToSupabase,
     clearAllData,
     triggerExportBackup,
     importFromJson,
@@ -68,6 +71,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
+
+  const [isSeeding, setIsSeeding] = useState(false);
+  const [seedResult, setSeedResult] = useState<{
     type: 'success' | 'error';
     message: string;
   } | null>(null);
@@ -165,6 +174,41 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     }
   };
 
+  const handleSeedRealData = async () => {
+    if (!isAdmin) {
+      alert('จำเป็นต้องเข้าสู่ระบบ 🔑 Admin Mode ก่อนเพื่อกู้คืน/ซิงก์ข้อมูลเริ่มต้นเข้า Supabase');
+      return;
+    }
+    if (
+      !confirm(
+        '🌱 ยืนยันการกู้คืนและซิงก์ข้อมูลเริ่มต้นจริงเข้า Supabase Database หรือไม่?\n\n' +
+        '• ยอดขายไข่ Urgent Call: 5 รายการจริง โค้ด 1 (100 ฟอง, 1,800฿, โค้ด 1 เหลือ 40 ฟอง)\n' +
+        '• Figures (5 กล่อง) และ Keycaps (8 กล่อง): คงเหลือ 100% (ทุน 45,000฿)\n' +
+        '• สต็อกสินค้า Cash Items: 22 รายการ (มูลค่าคงเหลือ 13,420฿)\n' +
+        '• ประวัติการขาย Cash Sales: 60 รายการตาม PDF (51,570.10฿)\n' +
+        '• พอยท์คงเหลือ: 88,650 Points (@ 0.065 = 5,762.25฿)\n\n' +
+        '*ข้อมูลเก่าใน Supabase ทั้งหมดจะถูกล้างและแทนที่ด้วยชุดข้อมูลจริงนี้*'
+      )
+    ) {
+      return;
+    }
+
+    setIsSeeding(true);
+    setSeedResult(null);
+    try {
+      const res = await seedInitialDataToSupabase();
+      if (res.success) {
+        setSeedResult({ type: 'success', message: res.message });
+      } else {
+        setSeedResult({ type: 'error', message: res.message });
+      }
+    } catch (err: any) {
+      setSeedResult({ type: 'error', message: `เกิดข้อผิดพลาด: ${err.message || err}` });
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
   const handleCopySql = () => {
     navigator.clipboard.writeText(SUPABASE_SQL_SCHEMA);
     setCopiedSql(true);
@@ -215,11 +259,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const json = JSON.parse(event.target?.result as string);
-        importFromJson(json);
-        alert('นำเข้าข้อมูลสำรองสำเร็จเรียบร้อย!');
+        const res = await importFromJson(json);
+        alert(res?.message || 'นำเข้าข้อมูลสำรองและซิงก์เข้าฐานข้อมูลสำเร็จเรียบร้อย!');
         onClose();
       } catch (err) {
         alert('ไฟล์สำรองไม่ถูกต้อง กรุณาตรวจสอบไฟล์ JSON');
@@ -449,6 +493,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   </>
                 )}
               </button>
+
+              <button
+                type="button"
+                onClick={handleSeedRealData}
+                disabled={isSeeding}
+                className="px-4 py-2 rounded-xl font-bold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                title="ล้างและซิงก์ข้อมูลเริ่มต้นจริงเข้า Supabase (ยอดขายไข่ 5 บิล 1,800฿, สต็อก 22 รายการ 13,420฿, ยอดขาย 60 รายการ 51,570.10฿)"
+              >
+                {isSeeding ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                    <span>กำลังซิงก์ข้อมูลจริง...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sprout className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>🌱 ซิงก์ข้อมูลเริ่มต้นจริง (Seed Real Data)</span>
+                  </>
+                )}
+              </button>
             </div>
 
             {/* Save Status Banner */}
@@ -456,6 +520,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               <div className="p-2.5 rounded-xl bg-dark-800 border border-slate-600 text-slate-200 text-xs flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 <span>{saveStatus}</span>
+              </div>
+            )}
+
+            {/* Seed Result Banner */}
+            {seedResult && (
+              <div
+                className={`p-3 rounded-xl border text-xs flex items-start gap-2.5 ${
+                  seedResult.type === 'success'
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                    : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+                }`}
+              >
+                {seedResult.type === 'success' ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-rose-400 mt-0.5 flex-shrink-0" />
+                )}
+                <div className="flex-1 leading-relaxed">{seedResult.message}</div>
               </div>
             )}
 
@@ -759,7 +841,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               <div>
                 <h5 className="font-bold text-white text-sm">นำเข้าข้อมูลจากไฟล์สำรอง (Restore Backup)</h5>
                 <p className="text-slate-400 text-[11px]">
-                  กู้คืนข้อมูลทั้งหมดจากไฟล์ JSON ที่เคยสำรองไว้
+                  กู้คืนข้อมูลทั้งหมดจากไฟล์ JSON ที่เคยสำรองไว้ และซิงก์กลับขึ้น Supabase โดยอัตโนมัติ
                 </p>
               </div>
               <label className="px-4 py-2 rounded-xl bg-dark-750 hover:bg-dark-700 text-slate-200 border border-dark-600 flex items-center gap-2 cursor-pointer transition-colors font-medium whitespace-nowrap">
@@ -772,6 +854,40 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   className="hidden"
                 />
               </label>
+            </div>
+
+            {/* Seed Real Data Card */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-dark-850 to-dark-850 border border-emerald-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-emerald-400" />
+                    <span>Real Data Migration</span>
+                  </span>
+                  <h5 className="font-bold text-emerald-300 text-sm">กู้คืน & ซิงก์ข้อมูลเริ่มต้นจริงเข้า Supabase (Seed Real Data)</h5>
+                </div>
+                <p className="text-slate-300 text-[11px] leading-relaxed">
+                  ล้างและแทนที่ด้วยชุดข้อมูลจริงเริ่มต้น: 🥚 ไข่ ROC 5 บิล (100 ฟอง 1,800฿ โค้ด 1 เหลือ 40 ฟอง), Figures (5 กล่อง) & Keycaps (8 กล่อง) คงเหลือ 100%, 💎 สต็อก Cash Items 22 รายการ (13,420฿), 📜 ประวัติการขาย Cash Sales 60 รายการตาม PDF (51,570.10฿) และพอยท์ 88,650
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleSeedRealData}
+                disabled={isSeeding}
+                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center gap-2 transition-all shadow-md hover:shadow-emerald-500/25 whitespace-nowrap disabled:opacity-50"
+              >
+                {isSeeding ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>กำลังซิงก์...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sprout className="w-4 h-4 text-emerald-200" />
+                    <span>🌱 ซิงก์ข้อมูลจริง</span>
+                  </>
+                )}
+              </button>
             </div>
 
             <div className="p-4 rounded-2xl bg-dark-850 border border-dark-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

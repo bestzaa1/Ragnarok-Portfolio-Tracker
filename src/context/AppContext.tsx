@@ -23,6 +23,7 @@ import {
   SAMPLE_CASH_ITEMS,
   SAMPLE_CASH_SALES,
 } from '@/lib/constants';
+import initialRealData from '@/lib/initialRealData.json';
 import {
   calculateDashboardSummary,
   calculateCashPortfolioSummary,
@@ -98,8 +99,9 @@ interface AppContextType {
   updateCashConfig: (newConfig: Partial<CashPortfolioConfig>) => void;
   updateSupabaseConfig: (newConfig: SupabaseConfig) => Promise<boolean>;
   resetToSampleData: () => Promise<void>;
+  seedInitialDataToSupabase: () => Promise<{ success: boolean; message: string }>;
   clearAllData: () => Promise<void>;
-  importFromJson: (jsonData: any) => void;
+  importFromJson: (jsonData: any) => Promise<{ success: boolean; message: string }>;
   triggerExportExcel: () => void;
   triggerExportBackup: () => void;
   triggerConfettiEffect: () => void;
@@ -1526,30 +1528,127 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
-  const resetToSampleData = useCallback(async () => {
-    setEggSales(SAMPLE_EGG_SALES);
-    setPhysicalSales(SAMPLE_PHYSICAL_SALES);
-    setConfig(DEFAULT_CONFIG);
-    setCashItems(SAMPLE_CASH_ITEMS);
-    setCashSales(SAMPLE_CASH_SALES);
-    setCashConfig(DEFAULT_CASH_PORTFOLIO_CONFIG);
+  const seedInitialDataToSupabase = useCallback(async (): Promise<{ success: boolean; message: string }> => {
+    try {
+      const {
+        config: seedConfig,
+        cashConfig: seedCashConfig,
+        eggSales: seedEggs,
+        physicalSales: seedPhys,
+        cashItems: seedItems,
+        cashSales: seedSales,
+      } = initialRealData;
 
-    localStorage.setItem(LOCAL_STORAGE_EGG_SALES, JSON.stringify(SAMPLE_EGG_SALES));
-    localStorage.setItem(LOCAL_STORAGE_PHYSICAL_SALES, JSON.stringify(SAMPLE_PHYSICAL_SALES));
-    localStorage.setItem(LOCAL_STORAGE_CONFIG, JSON.stringify(DEFAULT_CONFIG));
-    localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(SAMPLE_CASH_ITEMS));
-    localStorage.setItem(LOCAL_STORAGE_CASH_SALES, JSON.stringify(SAMPLE_CASH_SALES));
-    localStorage.setItem(LOCAL_STORAGE_CASH_CONFIG, JSON.stringify(DEFAULT_CASH_PORTFOLIO_CONFIG));
+      // 1. อัปเดต React State ภายในเครื่องทันที
+      setConfig(seedConfig as AppCostConfig);
+      setCashConfig(seedCashConfig as CashPortfolioConfig);
+      setEggSales(seedEggs as EggSale[]);
+      setPhysicalSales(seedPhys as PhysicalSale[]);
+      setCashItems(seedItems as CashItem[]);
+      setCashSales(seedSales as CashSale[]);
 
-    const supabase = getSupabaseClient();
-    if (supabase) {
-      try {
-        await uploadLocalToSupabase();
-      } catch (e) {
-        console.error('Supabase reset sample error:', e);
+      // 2. บันทึกลงใน LocalStorage สำหรับ Offline Fallback
+      localStorage.setItem(LOCAL_STORAGE_CONFIG, JSON.stringify(seedConfig));
+      localStorage.setItem(LOCAL_STORAGE_CASH_CONFIG, JSON.stringify(seedCashConfig));
+      localStorage.setItem(LOCAL_STORAGE_EGG_SALES, JSON.stringify(seedEggs));
+      localStorage.setItem(LOCAL_STORAGE_PHYSICAL_SALES, JSON.stringify(seedPhys));
+      localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(seedItems));
+      localStorage.setItem(LOCAL_STORAGE_CASH_SALES, JSON.stringify(seedSales));
+
+      // 3. ซิงก์เข้า Supabase Database (ถ้าเชื่อมต่ออยู่)
+      const supabase = getSupabaseClient();
+      if (!supabase || !supabaseConfig.enabled) {
+        return {
+          success: true,
+          message: 'กู้คืนข้อมูลเริ่มต้นจริงในเบราว์เซอร์สำเร็จ (โหมด LocalStorage)',
+        };
       }
+
+      // 3.1 ล้างข้อมูลเก่าออกจาก Supabase ทุกตาราง (Clean Slate)
+      await supabase.from('egg_sales').delete().neq('id', '___none___');
+      await supabase.from('physical_sales').delete().neq('id', '___none___');
+      await supabase.from('cash_items').delete().neq('id', '___none___');
+      await supabase.from('cash_sales').delete().neq('id', '___none___');
+
+      // 3.2 บันทึกข้อมูลจริง 5 รายการยอดขายไข่ Urgent Call (Code 1 รวม 100 ฟอง 1,800 บาท)
+      if (seedEggs && seedEggs.length > 0) {
+        await supabase.from('egg_sales').insert(
+          seedEggs.map((s: any) => ({
+            id: s.id,
+            server: s.server,
+            code_id: s.codeId,
+            customer_name: s.customerName,
+            quantity: s.quantity,
+            price_per_egg: s.pricePerEgg,
+            total_amount: s.totalAmount,
+            status: s.status,
+            date: s.date,
+            note: s.note || '',
+          }))
+        );
+      }
+
+      // 3.3 บันทึกสต็อกสินค้า Cash Items 22 รายการ (มูลค่าคงเหลือ Remain Sale = 13,420.00 THB)
+      if (seedItems && seedItems.length > 0) {
+        await supabase.from('cash_items').insert(
+          seedItems.map((i: any) => ({
+            id: i.id,
+            name: i.name,
+            category: i.category,
+            server: i.server,
+            total_qty: i.totalQty ?? 0,
+            sold_qty: i.soldQty ?? 0,
+            stock_qty: i.stockQty,
+            total_sale: i.totalSale ?? 0,
+            target_price_per_unit: i.targetPricePerUnit,
+            remain_sale: i.remainSale ?? i.stockQty * i.targetPricePerUnit,
+            note: i.note || '',
+          }))
+        );
+      }
+
+      // 3.4 บันทึกประวัติการขาย Cash Sales Ledger จาก PDF ทั้ง 60 รายการ (ยอดขายรวม 51,570.10 THB)
+      if (seedSales && seedSales.length > 0) {
+        await supabase.from('cash_sales').insert(
+          seedSales.map((s: any) => ({
+            id: s.id,
+            cash_item_id: s.cashItemId || null,
+            item_name: s.itemName,
+            category: s.category,
+            customer_name: s.customerName,
+            quantity: s.quantity,
+            unit_price: s.unitPrice,
+            total_amount: s.totalAmount,
+            server: s.server,
+            status: s.status,
+            date: s.date,
+            note: s.note || '',
+          }))
+        );
+      }
+
+      // 3.5 บันทึกคอนฟิกต้นทุน Urgent Call (45k) และพอร์ตเติมเงิน (54k)
+      await supabase.from('app_configs').upsert([
+        { key: 'urgent_call_config', value: seedConfig, updated_at: new Date().toISOString() },
+        { key: 'cash_portfolio_config', value: seedCashConfig, updated_at: new Date().toISOString() },
+      ]);
+
+      return {
+        success: true,
+        message: '🌱 กู้คืนและซิงก์ข้อมูลเริ่มต้นจริงเข้า Supabase Database เรียบร้อยสมบูรณ์ 100%!',
+      };
+    } catch (err: any) {
+      console.error('seedInitialDataToSupabase error:', err);
+      return {
+        success: false,
+        message: `เกิดข้อผิดพลาดในการซิงก์เข้า Supabase: ${err.message || err}`,
+      };
     }
-  }, [uploadLocalToSupabase]);
+  }, [supabaseConfig.enabled]);
+
+  const resetToSampleData = useCallback(async () => {
+    await seedInitialDataToSupabase();
+  }, [seedInitialDataToSupabase]);
 
   const clearAllData = useCallback(async () => {
     setEggSales([]);
@@ -1571,32 +1670,144 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
-  const importFromJson = useCallback((jsonData: any) => {
-    if (jsonData.eggSales && Array.isArray(jsonData.eggSales)) {
-      setEggSales(jsonData.eggSales);
-      localStorage.setItem(LOCAL_STORAGE_EGG_SALES, JSON.stringify(jsonData.eggSales));
+  const importFromJson = useCallback(async (jsonData: any): Promise<{ success: boolean; message: string }> => {
+    try {
+      if (jsonData.eggSales && Array.isArray(jsonData.eggSales)) {
+        setEggSales(jsonData.eggSales);
+        localStorage.setItem(LOCAL_STORAGE_EGG_SALES, JSON.stringify(jsonData.eggSales));
+      }
+      if (jsonData.physicalSales && Array.isArray(jsonData.physicalSales)) {
+        setPhysicalSales(jsonData.physicalSales);
+        localStorage.setItem(LOCAL_STORAGE_PHYSICAL_SALES, JSON.stringify(jsonData.physicalSales));
+      }
+      if (jsonData.config) {
+        setConfig(jsonData.config);
+        localStorage.setItem(LOCAL_STORAGE_CONFIG, JSON.stringify(jsonData.config));
+      }
+      if (jsonData.cashItems && Array.isArray(jsonData.cashItems)) {
+        setCashItems(jsonData.cashItems);
+        localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(jsonData.cashItems));
+      }
+      if (jsonData.cashSales && Array.isArray(jsonData.cashSales)) {
+        setCashSales(jsonData.cashSales);
+        localStorage.setItem(LOCAL_STORAGE_CASH_SALES, JSON.stringify(jsonData.cashSales));
+      }
+      if (jsonData.cashConfig) {
+        setCashConfig(jsonData.cashConfig);
+        localStorage.setItem(LOCAL_STORAGE_CASH_CONFIG, JSON.stringify(jsonData.cashConfig));
+      }
+
+      // ซิงก์ข้อมูลที่กู้คืนกลับขึ้น Supabase ทันทีหากเชื่อมต่ออยู่
+      const supabase = getSupabaseClient();
+      if (supabase && supabaseConfig.enabled) {
+        if (jsonData.eggSales && Array.isArray(jsonData.eggSales)) {
+          await supabase.from('egg_sales').delete().neq('id', '___none___');
+          if (jsonData.eggSales.length > 0) {
+            await supabase.from('egg_sales').insert(
+              jsonData.eggSales.map((s: any) => ({
+                id: s.id,
+                server: s.server,
+                code_id: s.codeId,
+                customer_name: s.customerName,
+                quantity: s.quantity,
+                price_per_egg: s.pricePerEgg,
+                total_amount: s.totalAmount,
+                status: s.status,
+                date: s.date,
+                note: s.note || '',
+              }))
+            );
+          }
+        }
+
+        if (jsonData.physicalSales && Array.isArray(jsonData.physicalSales)) {
+          await supabase.from('physical_sales').delete().neq('id', '___none___');
+          if (jsonData.physicalSales.length > 0) {
+            await supabase.from('physical_sales').insert(
+              jsonData.physicalSales.map((s: any) => ({
+                id: s.id,
+                category: s.category,
+                item_name: s.itemName,
+                customer_name: s.customerName,
+                quantity: s.quantity,
+                unit_price: s.unitPrice,
+                total_amount: s.totalAmount,
+                status: s.status,
+                channel: s.channel || '',
+                date: s.date,
+                note: s.note || '',
+              }))
+            );
+          }
+        }
+
+        if (jsonData.cashItems && Array.isArray(jsonData.cashItems)) {
+          await supabase.from('cash_items').delete().neq('id', '___none___');
+          if (jsonData.cashItems.length > 0) {
+            await supabase.from('cash_items').insert(
+              jsonData.cashItems.map((i: any) => ({
+                id: i.id,
+                name: i.name,
+                category: i.category,
+                server: i.server,
+                total_qty: i.totalQty ?? 0,
+                sold_qty: i.soldQty ?? 0,
+                stock_qty: i.stockQty,
+                total_sale: i.totalSale ?? 0,
+                target_price_per_unit: i.targetPricePerUnit,
+                remain_sale: i.remainSale ?? i.stockQty * i.targetPricePerUnit,
+                note: i.note || '',
+              }))
+            );
+          }
+        }
+
+        if (jsonData.cashSales && Array.isArray(jsonData.cashSales)) {
+          await supabase.from('cash_sales').delete().neq('id', '___none___');
+          if (jsonData.cashSales.length > 0) {
+            await supabase.from('cash_sales').insert(
+              jsonData.cashSales.map((s: any) => ({
+                id: s.id,
+                cash_item_id: s.cashItemId || null,
+                item_name: s.itemName,
+                category: s.category,
+                customer_name: s.customerName,
+                quantity: s.quantity,
+                unit_price: s.unitPrice,
+                total_amount: s.totalAmount,
+                server: s.server,
+                status: s.status,
+                date: s.date,
+                note: s.note || '',
+              }))
+            );
+          }
+        }
+
+        if (jsonData.config || jsonData.cashConfig) {
+          const configUpdates = [];
+          if (jsonData.config) {
+            configUpdates.push({ key: 'urgent_call_config', value: jsonData.config, updated_at: new Date().toISOString() });
+          }
+          if (jsonData.cashConfig) {
+            configUpdates.push({ key: 'cash_portfolio_config', value: jsonData.cashConfig, updated_at: new Date().toISOString() });
+          }
+          await supabase.from('app_configs').upsert(configUpdates);
+        }
+      }
+
+      return {
+        success: true,
+        message: 'นำเข้าข้อมูลสำรองและซิงก์เข้าฐานข้อมูล Supabase สำเร็จเรียบร้อย!',
+      };
+    } catch (err: any) {
+      console.error('Import error:', err);
+      return {
+        success: false,
+        message: `เกิดข้อผิดพลาดในการนำเข้าข้อมูล: ${err.message || err}`,
+      };
     }
-    if (jsonData.physicalSales && Array.isArray(jsonData.physicalSales)) {
-      setPhysicalSales(jsonData.physicalSales);
-      localStorage.setItem(LOCAL_STORAGE_PHYSICAL_SALES, JSON.stringify(jsonData.physicalSales));
-    }
-    if (jsonData.config) {
-      setConfig(jsonData.config);
-      localStorage.setItem(LOCAL_STORAGE_CONFIG, JSON.stringify(jsonData.config));
-    }
-    if (jsonData.cashItems && Array.isArray(jsonData.cashItems)) {
-      setCashItems(jsonData.cashItems);
-      localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(jsonData.cashItems));
-    }
-    if (jsonData.cashSales && Array.isArray(jsonData.cashSales)) {
-      setCashSales(jsonData.cashSales);
-      localStorage.setItem(LOCAL_STORAGE_CASH_SALES, JSON.stringify(jsonData.cashSales));
-    }
-    if (jsonData.cashConfig) {
-      setCashConfig(jsonData.cashConfig);
-      localStorage.setItem(LOCAL_STORAGE_CASH_CONFIG, JSON.stringify(jsonData.cashConfig));
-    }
-  }, []);
+  }, [supabaseConfig.enabled]);
 
   const triggerExportExcel = useCallback(() => {
     const rocSales = eggSales.filter((s) => s.server === 'ROC');
@@ -1683,6 +1894,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateCashConfig,
         updateSupabaseConfig,
         resetToSampleData,
+        seedInitialDataToSupabase,
         clearAllData,
         importFromJson,
         triggerExportExcel,

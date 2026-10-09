@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Coins, Sparkles, Check, AlertCircle } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { X, Coins, Check } from 'lucide-react';
 
 interface EditPointsModalProps {
   isOpen: boolean;
@@ -18,9 +19,14 @@ export const EditPointsModal: React.FC<EditPointsModalProps> = ({
   currentRate,
   onSave,
 }) => {
+  const [mounted, setMounted] = useState(false);
   const [points, setPoints] = useState<number>(currentPoints);
   const [rate, setRate] = useState<number>(currentRate || 0.065);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -30,7 +36,18 @@ export const EditPointsModal: React.FC<EditPointsModalProps> = ({
     }
   }, [isOpen, currentPoints, currentRate]);
 
-  if (!isOpen) return null;
+  // Handle ESC key to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !mounted) return null;
 
   const currentThbValue = points * rate;
   const pointDifference = points - currentPoints;
@@ -53,12 +70,18 @@ export const EditPointsModal: React.FC<EditPointsModalProps> = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-      <div className="relative w-full max-w-md rounded-3xl bg-dark-900 border border-dark-700 shadow-2xl p-6 text-white max-h-[92vh] overflow-y-auto">
+  const modalContent = (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="relative w-full max-w-md rounded-3xl bg-dark-900 border border-dark-700 shadow-2xl p-6 text-white max-h-[92vh] overflow-y-auto animate-fadeIn">
         {/* Close Button */}
         <button
           onClick={onClose}
+          type="button"
           className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-white hover:bg-dark-800 transition-colors"
         >
           <X className="w-5 h-5" />
@@ -238,4 +261,6 @@ export const EditPointsModal: React.FC<EditPointsModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };

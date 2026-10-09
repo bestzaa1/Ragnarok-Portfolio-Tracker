@@ -26,13 +26,13 @@ import {
   RefreshCw,
   Table,
 } from 'lucide-react';
-import { EditPointsModal } from './EditPointsModal';
 
 interface CashItemTrackerProps {
   onOpenAddItem: () => void;
   onOpenEditItem: (item: CashItem) => void;
   onOpenSellItem: (item?: CashItem) => void;
   onOpenEditSale: (sale: CashSale) => void;
+  onOpenEditPoints: () => void;
 }
 
 export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
@@ -40,6 +40,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
   onOpenEditItem,
   onOpenSellItem,
   onOpenEditSale,
+  onOpenEditPoints,
 }) => {
   const {
     isAdmin,
@@ -53,11 +54,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
     toggleCashSaleStatus,
     syncFromPromotionSheet,
     syncFromSalesLedgerPdf,
-    updateCashConfig,
   } = useApp();
-
-  // Edit Points Modal
-  const [isEditPointsOpen, setIsEditPointsOpen] = useState(false);
 
   // Stock table filters
   const [stockServerFilter, setStockServerFilter] = useState<'ALL' | 'Baphomet' | 'Moonlight'>('ALL');
@@ -201,7 +198,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
               {isAdmin && (
                 <button
                   type="button"
-                  onClick={() => setIsEditPointsOpen(true)}
+                  onClick={onOpenEditPoints}
                   className="px-2 py-0.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 text-[10px] font-bold border border-sky-500/30 flex items-center gap-1 transition-all shadow-sm cursor-pointer"
                   title="คลิกเพื่อแก้ไขยอดพอยท์คงเหลือโดยตรง"
                 >
@@ -912,19 +909,6 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Edit Points Modal */}
-      {isEditPointsOpen && (
-        <EditPointsModal
-          isOpen={isEditPointsOpen}
-          onClose={() => setIsEditPointsOpen(false)}
-          currentPoints={cashConfig.remainingPoints}
-          currentRate={cashConfig.pointExchangeRate}
-          onSave={async (newPoints, newRate) => {
-            updateCashConfig({ remainingPoints: newPoints, pointExchangeRate: newRate });
-          }}
-        />
-      )}
     </div>
   );
 };

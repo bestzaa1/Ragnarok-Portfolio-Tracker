@@ -12,6 +12,7 @@ import { CombinedCashFlowTracker } from '@/components/CombinedCashFlowTracker';
 import { QuickSaleModal, SaleModalType } from '@/components/QuickSaleModal';
 import { AddEditCashItemModal } from '@/components/AddEditCashItemModal';
 import { CashSaleModal } from '@/components/CashSaleModal';
+import { EditPointsModal } from '@/components/EditPointsModal';
 import { SettingsModal } from '@/components/SettingsModal';
 import { AdminLoginModal } from '@/components/AdminLoginModal';
 import { EggSale, PhysicalSale, ServerType, CashItem, CashSale } from '@/types';
@@ -30,7 +31,16 @@ import {
 } from 'lucide-react';
 
 export default function HomePage() {
-  const { summary, cashSummary, combinedCashFlow, triggerExportExcel, missingTables, isAdmin } = useApp();
+  const {
+    summary,
+    cashSummary,
+    cashConfig,
+    updateCashConfig,
+    combinedCashFlow,
+    triggerExportExcel,
+    missingTables,
+    isAdmin,
+  } = useApp();
 
   // Top Module Selection
   const [activeModule, setActiveModule] = useState<MainModuleType>('URGENT_CALL');
@@ -55,6 +65,8 @@ export default function HomePage() {
   const [isCashSaleOpen, setIsCashSaleOpen] = useState(false);
   const [presetSellItem, setPresetSellItem] = useState<CashItem | null>(null);
   const [editingCashSale, setEditingCashSale] = useState<CashSale | null>(null);
+
+  const [isEditPointsOpen, setIsEditPointsOpen] = useState(false);
 
   // Global Settings Modal
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -250,6 +262,7 @@ export default function HomePage() {
               onOpenEditItem={handleOpenEditCashItem}
               onOpenSellItem={handleOpenSellItem}
               onOpenEditSale={handleOpenEditCashSale}
+              onOpenEditPoints={() => setIsEditPointsOpen(true)}
             />
           </div>
         )}
@@ -355,6 +368,17 @@ export default function HomePage() {
       <AdminLoginModal
         isOpen={isAdminLoginOpen}
         onClose={() => setIsAdminLoginOpen(false)}
+      />
+
+      {/* Edit Points Modal */}
+      <EditPointsModal
+        isOpen={isEditPointsOpen}
+        onClose={() => setIsEditPointsOpen(false)}
+        currentPoints={cashConfig.remainingPoints}
+        currentRate={cashConfig.pointExchangeRate}
+        onSave={async (newPoints, newRate) => {
+          updateCashConfig({ remainingPoints: newPoints, pointExchangeRate: newRate });
+        }}
       />
     </div>
   );

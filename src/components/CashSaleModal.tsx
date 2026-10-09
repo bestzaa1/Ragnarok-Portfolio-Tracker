@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Check,
   Package,
+  Coins,
 } from 'lucide-react';
 
 interface CashSaleModalProps {
@@ -27,7 +28,7 @@ export const CashSaleModal: React.FC<CashSaleModalProps> = ({
   presetItem = null,
   editingSale = null,
 }) => {
-  const { cashItems, cashSales, addCashSale, updateCashSale } = useApp();
+  const { cashItems, cashSales, cashConfig, addCashSale, updateCashSale } = useApp();
 
   const isEditing = Boolean(editingSale);
 
@@ -44,18 +45,29 @@ export const CashSaleModal: React.FC<CashSaleModalProps> = ({
   const [note, setNote] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Selected item object
+  // Selected item object (if from inventory)
   const currentItem = useMemo(() => {
+    if (selectedItemId === '__CASH_POINT__') return null;
     return cashItems.find((i) => i.id === selectedItemId);
   }, [cashItems, selectedItemId]);
+
+  const isCashPointMode = selectedItemId === '__CASH_POINT__' || category === 'CASH_POINT';
 
   const maxAvailableStock = currentItem
     ? currentItem.stockQty + (editingSale?.cashItemId === currentItem.id ? editingSale.quantity : 0)
     : 99999;
 
+  const maxAvailablePoints =
+    cashConfig.remainingPoints +
+    (isEditing && editingSale?.category === 'CASH_POINT' ? editingSale.quantity : 0);
+
   useEffect(() => {
     if (editingSale) {
-      setSelectedItemId(editingSale.cashItemId || '');
+      if (editingSale.category === 'CASH_POINT') {
+        setSelectedItemId('__CASH_POINT__');
+      } else {
+        setSelectedItemId(editingSale.cashItemId || '');
+      }
       setItemName(editingSale.itemName);
       setCategory(editingSale.category);
       setServer(editingSale.server);
@@ -104,12 +116,30 @@ export const CashSaleModal: React.FC<CashSaleModalProps> = ({
   // When changing selected item
   const handleItemSelect = (itemId: string) => {
     setSelectedItemId(itemId);
+    if (itemId === '__CASH_POINT__') {
+      setItemName('Cash Point');
+      setCategory('CASH_POINT');
+      setServer('All');
+      setUnitPrice(cashConfig.pointExchangeRate || 0.065);
+      setQuantity(1000);
+      setCustomTotal('');
+      return;
+    }
+
     const item = cashItems.find((i) => i.id === itemId);
     if (item) {
       setItemName(item.name);
       setCategory(item.category);
       setServer(item.server);
       setUnitPrice(item.targetPricePerUnit);
+      setQuantity(1);
+      setCustomTotal('');
+    } else {
+      setItemName('');
+      setCategory('PROMO_FREEBIE');
+      setServer('Baphomet');
+      setUnitPrice(100);
+      setQuantity(1);
       setCustomTotal('');
     }
   };
@@ -140,14 +170,22 @@ export const CashSaleModal: React.FC<CashSaleModalProps> = ({
       setErrorMsg('กรุณาระบุจำนวนที่มากกว่า 0');
       return;
     }
-    if (selectedItemId && quantity > maxAvailableStock) {
+
+    if (isCashPointMode) {
+      if (quantity > maxAvailablePoints) {
+        setErrorMsg(
+          `จำนวนพอยท์ที่ระบุ (${quantity.toLocaleString()} pts) เกินยอดพอยท์คงเหลือในพอร์ต (${maxAvailablePoints.toLocaleString()} pts)`
+        );
+        return;
+      }
+    } else if (selectedItemId && selectedItemId !== '__CASH_POINT__' && quantity > maxAvailableStock) {
       setErrorMsg(`จำนวนขายเกินสต็อกคงเหลือในคลัง (มีคงเหลือเพียง ${maxAvailableStock} ชิ้น)`);
       return;
     }
 
     if (editingSale) {
       await updateCashSale(editingSale.id, {
-        cashItemId: selectedItemId || undefined,
+        cashItemId: isCashPointMode ? undefined : selectedItemId || undefined,
         itemName: itemName.trim(),
         category,
         customerName: customerName.trim(),
@@ -161,7 +199,7 @@ export const CashSaleModal: React.FC<CashSaleModalProps> = ({
       });
     } else {
       await addCashSale({
-        cashItemId: selectedItemId || undefined,
+        cashItemId: isCashPointMode ? undefined : selectedItemId || undefined,
         itemName: itemName.trim(),
         category,
         customerName: customerName.trim(),
@@ -191,15 +229,29 @@ export const CashSaleModal: React.FC<CashSaleModalProps> = ({
 
         {/* Modal Header */}
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-            <ShoppingBag className="w-5 h-5" />
+          <div
+            className={`w-10 h-10 rounded-xl border flex items-center justify-center ${
+              isCashPointMode
+                ? 'bg-purple-500/20 border-purple-500/30 text-purple-400'
+                : 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400'
+            }`}
+          >
+            {isCashPointMode ? <Coins className="w-5 h-5" /> : <ShoppingBag className="w-5 h-5" />}
           </div>
           <div>
             <h3 className="text-xl font-black text-white">
-              {isEditing ? 'แก้ไขรายการขาย Cash Item' : '🛒 บันทึกการขาย Cash Item'}
+              {isEditing
+                ? isCashPointMode
+                  ? 'แก้ไขรายการขาย Cash Point'
+                  : 'แก้ไขรายการขาย Cash Item'
+                : isCashPointMode
+                ? '💎 บันทึกการขาย Cash Point'
+                : '🛒 บันทึกการขาย Cash Item'}
             </h3>
             <p className="text-xs text-slate-400">
-              ตัดลดสต็อกสินค้าอัตโนมัติ และอัปเดตยอดขายสดสะสมทันที
+              {isCashPointMode
+                ? 'หักลดยอดพอยท์คงเหลืออัตโนมัติ และอัปเดตยอดขายสดสะสมทันที'
+                : 'ตัดลดสต็อกสินค้าอัตโนมัติ และอัปเดตยอดขายสดสะสมทันที'}
             </p>
           </div>
         </div>
@@ -223,17 +275,34 @@ export const CashSaleModal: React.FC<CashSaleModalProps> = ({
               className="w-full bg-dark-800 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
             >
               <option value="">-- ระบุสินค้าเอง (ไม่ตัดสต็อกในคลัง) --</option>
+              <option value="__CASH_POINT__" className="text-purple-300 font-bold bg-dark-900">
+                💎 [Cash Point] ขายพอยท์ตรง / ดึงพอยท์ไปใช้ - เหลือ {cashConfig.remainingPoints.toLocaleString()} pts (฿{cashConfig.pointExchangeRate}/pt)
+              </option>
               {cashItems.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.category === 'PROMO_FREEBIE' ? '🎁 [ของแถม]' : '🛒 [ซื้อพอยท์]'}{' '}
-                  {item.name} ({item.server}) - เหลือ {item.stockQty} ชิ้น (฿
-                  {item.targetPricePerUnit})
+                  {item.name} ({item.server}) - เหลือ {item.stockQty} ชิ้น (฿{item.targetPricePerUnit})
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Item Name & Server (if manual or editable) */}
+          {/* Cash Point Mode Highlight Banner */}
+          {isCashPointMode && (
+            <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-200 text-xs flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Coins className="w-4 h-4 text-purple-400 shrink-0" />
+                <span>
+                  โหมดขายพอยท์ตรง (คงเหลือ <strong>{maxAvailablePoints.toLocaleString()}</strong> pts)
+                </span>
+              </div>
+              <span className="font-bold text-emerald-400 text-xs">
+                @ {unitPrice} ฿/pt
+              </span>
+            </div>
+          )}
+
+          {/* Item Name & Server */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-slate-300 font-semibold mb-1">
@@ -299,28 +368,96 @@ export const CashSaleModal: React.FC<CashSaleModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="text-slate-300 font-semibold">จำนวน *</label>
-                {currentItem && (
-                  <span className="text-[10px] text-amber-400">
-                    สต็อก: {maxAvailableStock}
+                <label className="text-slate-300 font-semibold">
+                  {isCashPointMode ? 'จำนวนพอยท์ (Points) *' : 'จำนวน *'}
+                </label>
+                {isCashPointMode ? (
+                  <span
+                    className={`text-[10px] font-bold ${
+                      quantity > maxAvailablePoints ? 'text-rose-400' : 'text-purple-300'
+                    }`}
+                  >
+                    เหลือ {maxAvailablePoints.toLocaleString()} pts
                   </span>
-                )}
+                ) : currentItem ? (
+                  <span className="text-[10px] text-amber-400">สต็อก: {maxAvailableStock}</span>
+                ) : null}
               </div>
               <input
                 type="number"
                 min={1}
-                step="any"
-                max={selectedItemId ? maxAvailableStock : undefined}
+                step={isCashPointMode ? '1' : 'any'}
+                max={
+                  isCashPointMode
+                    ? maxAvailablePoints
+                    : selectedItemId
+                    ? maxAvailableStock
+                    : undefined
+                }
                 required
                 value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value) || 0)}
-                className="w-full bg-dark-800 border border-dark-600 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400"
+                onChange={(e) => {
+                  setQuantity(Number(e.target.value) || 0);
+                  setCustomTotal('');
+                }}
+                className={`w-full bg-dark-800 border rounded-xl px-3 py-2 text-sm text-white focus:outline-none ${
+                  isCashPointMode && quantity > maxAvailablePoints
+                    ? 'border-rose-500 focus:border-rose-400'
+                    : 'border-dark-600 focus:border-amber-400'
+                }`}
               />
+
+              {/* Point Quick Preset Buttons */}
+              {isCashPointMode && (
+                <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                  <span className="text-[10px] text-slate-400">ระบุด่วน:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuantity(1000);
+                      setCustomTotal('');
+                    }}
+                    className="px-2 py-0.5 rounded-lg bg-dark-800 hover:bg-dark-750 text-purple-300 font-bold text-[10px] border border-purple-500/30 transition-colors"
+                  >
+                    1,000 pts
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuantity(5000);
+                      setCustomTotal('');
+                    }}
+                    className="px-2 py-0.5 rounded-lg bg-dark-800 hover:bg-dark-750 text-purple-300 font-bold text-[10px] border border-purple-500/30 transition-colors"
+                  >
+                    5,000 pts
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuantity(10000);
+                      setCustomTotal('');
+                    }}
+                    className="px-2 py-0.5 rounded-lg bg-dark-800 hover:bg-dark-750 text-purple-300 font-bold text-[10px] border border-purple-500/30 transition-colors"
+                  >
+                    10,000 pts
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuantity(maxAvailablePoints);
+                      setCustomTotal('');
+                    }}
+                    className="px-2 py-0.5 rounded-lg bg-dark-800 hover:bg-dark-750 text-amber-300 font-bold text-[10px] border border-amber-500/30 transition-colors"
+                  >
+                    ทั้งหมด ({maxAvailablePoints.toLocaleString()} pts)
+                  </button>
+                </div>
+              )}
             </div>
 
             <div>
               <label className="block text-slate-300 font-semibold mb-1">
-                ราคาต่อหน่วย (THB) *
+                {isCashPointMode ? 'ราคาต่อพอยท์ (฿/pt) *' : 'ราคาต่อหน่วย (THB) *'}
               </label>
               <input
                 type="number"
@@ -328,9 +465,17 @@ export const CashSaleModal: React.FC<CashSaleModalProps> = ({
                 step="any"
                 required
                 value={unitPrice}
-                onChange={(e) => setUnitPrice(Number(e.target.value) || 0)}
+                onChange={(e) => {
+                  setUnitPrice(Number(e.target.value) || 0);
+                  setCustomTotal('');
+                }}
                 className="w-full bg-dark-800 border border-dark-600 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400"
               />
+              {isCashPointMode && (
+                <span className="text-[10px] text-slate-500 mt-1 block">
+                  เรทมาตรฐาน @ {cashConfig.pointExchangeRate}
+                </span>
+              )}
             </div>
 
             <div>
@@ -405,7 +550,7 @@ export const CashSaleModal: React.FC<CashSaleModalProps> = ({
             </label>
             <input
               type="text"
-              placeholder="เช่น รับของในมอ, โอนพร้อมเพย์แล้ว..."
+              placeholder="เช่น รับของในมอ, โอนพร้อมเพย์แล้ว, ดึงพอยท์ไปใช้..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
               className="w-full bg-dark-800 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
@@ -423,9 +568,18 @@ export const CashSaleModal: React.FC<CashSaleModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-xl font-bold bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-500 text-dark-950 hover:brightness-110 active:scale-95 shadow-green-glow transition-all"
+              disabled={isCashPointMode && quantity > maxAvailablePoints}
+              className={`px-6 py-2.5 rounded-xl font-bold text-dark-950 hover:brightness-110 active:scale-95 shadow-green-glow transition-all ${
+                isCashPointMode && quantity > maxAvailablePoints
+                  ? 'bg-slate-600 cursor-not-allowed opacity-50'
+                  : 'bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-500'
+              }`}
             >
-              {isEditing ? 'บันทึกการแก้ไข' : 'ยืนยันการขาย & ตัดสต็อก'}
+              {isEditing
+                ? 'บันทึกการแก้ไข'
+                : isCashPointMode
+                ? 'ยืนยันการขาย & ตัดพอยท์'
+                : 'ยืนยันการขาย & ตัดสต็อก'}
             </button>
           </div>
         </form>

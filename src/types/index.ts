@@ -90,7 +90,7 @@ export interface DashboardSummary {
 // Types for Cash Items & Point Stock Module
 // ============================================
 
-export type CashItemCategory = 'PROMO_FREEBIE' | 'POINT_PURCHASED' | 'DIRECT_POINT';
+export type CashItemCategory = 'PROMO_FREEBIE' | 'POINT_PURCHASED' | 'DIRECT_POINT' | 'CASH_POINT';
 
 export interface CashItem {
   id: string;

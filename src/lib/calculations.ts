@@ -150,10 +150,10 @@ export function calculateCashPortfolioSummary(
     .filter((s) => s.status === 'Pending')
     .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
 
-  // If initialCashSales was set in older storage to ~51,570.10 and newSalesCleared also has ~51,570.10 from PDF,
-  // prevent double-counting.
+  // If cashSales contains transactions, the ledger records all sales directly (including 60 PDF sales).
+  // Baseline initialCashSales is only used if cashSales list is empty.
   const baselineSales =
-    config.initialCashSales && Math.abs(config.initialCashSales - newSalesCleared) < 1
+    cashSales.length > 0
       ? 0
       : (Number(config.initialCashSales) || 0);
 

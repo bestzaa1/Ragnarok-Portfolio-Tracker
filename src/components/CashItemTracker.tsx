@@ -26,6 +26,7 @@ import {
   RefreshCw,
   Table,
 } from 'lucide-react';
+import { EditPointsModal } from './EditPointsModal';
 
 interface CashItemTrackerProps {
   onOpenAddItem: () => void;
@@ -52,7 +53,11 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
     toggleCashSaleStatus,
     syncFromPromotionSheet,
     syncFromSalesLedgerPdf,
+    updateCashConfig,
   } = useApp();
+
+  // Edit Points Modal
+  const [isEditPointsOpen, setIsEditPointsOpen] = useState(false);
 
   // Stock table filters
   const [stockServerFilter, setStockServerFilter] = useState<'ALL' | 'Baphomet' | 'Moonlight'>('ALL');
@@ -187,11 +192,24 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
         </div>
 
         {/* Card 3: พอยท์คงเหลือ (Remaining Points) */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-dark-800 to-dark-850 border border-dark-700/80 p-5 shadow-lg hover:border-sky-500/50 transition-all">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-dark-800 to-dark-850 border border-dark-700/80 p-5 shadow-lg hover:border-sky-500/50 transition-all group">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-sky-400">
-              พอยท์คงเหลือ (Points)
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-sky-400">
+                พอยท์คงเหลือ (Points)
+              </span>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setIsEditPointsOpen(true)}
+                  className="px-2 py-0.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 text-[10px] font-bold border border-sky-500/30 flex items-center gap-1 transition-all shadow-sm cursor-pointer"
+                  title="คลิกเพื่อแก้ไขยอดพอยท์คงเหลือโดยตรง"
+                >
+                  <Edit2 className="w-2.5 h-2.5" />
+                  <span>แก้ไขยอด</span>
+                </button>
+              )}
+            </div>
             <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400">
               <Coins className="w-4 h-4" />
             </div>
@@ -201,7 +219,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
             <span className="text-xs font-medium text-slate-400">pts</span>
           </div>
           <div className="mt-3 pt-3 border-t border-dark-700/60 flex items-center justify-between text-xs">
-            <span className="text-slate-400">ตีเป็นเงิน @ 0.065</span>
+            <span className="text-slate-400">ตีเป็นเงิน @ {cashConfig.pointExchangeRate}</span>
             <span className="text-emerald-400 font-bold">
               ฿{cashSummary.pointValueThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
@@ -736,6 +754,10 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
                           🎁 ของแถม
                         </span>
+                      ) : sale.category === 'CASH_POINT' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/40">
+                          💎 ขายพอยท์
+                        </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-500/10 text-sky-300 border border-sky-500/30">
                           🛒 ซื้อพอยท์
@@ -758,12 +780,22 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
 
                     {/* Quantity */}
                     <td className="py-3 px-4 text-right font-bold text-slate-200">
-                      {sale.quantity.toLocaleString()}
+                      {sale.category === 'CASH_POINT' ? (
+                        <span className="text-purple-300">
+                          {sale.quantity.toLocaleString()} <span className="text-[10px] text-slate-400">pts</span>
+                        </span>
+                      ) : (
+                        sale.quantity.toLocaleString()
+                      )}
                     </td>
 
                     {/* Unit Price */}
                     <td className="py-3 px-4 text-right text-slate-300">
-                      ฿{sale.unitPrice.toLocaleString(undefined, { minimumFractionDigits: sale.unitPrice % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}
+                      {sale.category === 'CASH_POINT' ? (
+                        <span>฿{sale.unitPrice}/pt</span>
+                      ) : (
+                        <span>฿{sale.unitPrice.toLocaleString(undefined, { minimumFractionDigits: sale.unitPrice % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}</span>
+                      )}
                     </td>
 
                     {/* Total Amount */}
@@ -880,6 +912,19 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Edit Points Modal */}
+      {isEditPointsOpen && (
+        <EditPointsModal
+          isOpen={isEditPointsOpen}
+          onClose={() => setIsEditPointsOpen(false)}
+          currentPoints={cashConfig.remainingPoints}
+          currentRate={cashConfig.pointExchangeRate}
+          onSave={async (newPoints, newRate) => {
+            updateCashConfig({ remainingPoints: newPoints, pointExchangeRate: newRate });
+          }}
+        />
+      )}
     </div>
   );
 };

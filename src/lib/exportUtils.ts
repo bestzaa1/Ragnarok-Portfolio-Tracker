@@ -185,7 +185,13 @@ export function exportToExcel(
     const csRows = cashSales.map((s) => [
       s.date ? new Date(s.date).toLocaleString('th-TH') : '',
       s.itemName,
-      s.category === 'PROMO_FREEBIE' ? 'ของแถมโปรโมชั่น' : s.category === 'POINT_PURCHASED' ? 'ซื้อด้วยพอยท์' : 'พอยท์สด',
+      s.category === 'PROMO_FREEBIE'
+        ? 'ของแถมโปรโมชั่น'
+        : s.category === 'POINT_PURCHASED'
+        ? 'ซื้อด้วยพอยท์'
+        : s.category === 'CASH_POINT'
+        ? 'ขายพอยท์ตรง'
+        : 'พอยท์สด',
       s.server,
       s.customerName,
       s.quantity,

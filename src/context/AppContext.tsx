@@ -782,6 +782,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         }
       })
+      // 5. app_configs realtime
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_configs' }, (payload) => {
+        if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+          const r = payload.new as any;
+          if (r?.key === 'cash_portfolio_config' && r?.value) {
+            setCashConfig(r.value);
+            localStorage.setItem(LOCAL_STORAGE_CASH_CONFIG, JSON.stringify(r.value));
+          } else if (r?.key === 'urgent_call_config' && r?.value) {
+            setConfig(r.value);
+            localStorage.setItem(LOCAL_STORAGE_CONFIG, JSON.stringify(r.value));
+          }
+        }
+      })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           setIsSupabaseConnected(true);
@@ -1213,8 +1226,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCashSales(updatedSales);
       localStorage.setItem(LOCAL_STORAGE_CASH_SALES, JSON.stringify(updatedSales));
 
-      // 2. Automatically deduct item stock if tied to cashItemId
-      if (newSale.cashItemId) {
+      // 2. Automatically deduct item stock or cash points
+      if (newSale.category === 'CASH_POINT') {
+        const soldPoints = Number(newSale.quantity) || 0;
+        setCashConfig((prev) => {
+          const nextPoints = Math.max(0, prev.remainingPoints - soldPoints);
+          const merged = { ...prev, remainingPoints: nextPoints };
+          localStorage.setItem(LOCAL_STORAGE_CASH_CONFIG, JSON.stringify(merged));
+          const supabase = getSupabaseClient();
+          if (supabase) {
+            supabase
+              .from('app_configs')
+              .upsert({ key: 'cash_portfolio_config', value: merged, updated_at: new Date().toISOString() })
+              .then();
+          }
+          return merged;
+        });
+      } else if (newSale.cashItemId) {
         const item = cashItems.find((i) => i.id === newSale.cashItemId);
         if (item) {
           const nextStock = Math.max(0, item.stockQty - newSale.quantity);
@@ -1273,9 +1301,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateCashSale = useCallback(
     async (id: string, partial: Partial<CashSale>): Promise<boolean> => {
+      const target = cashSales.find((s) => s.id === id);
       const updated = cashSales.map((s) => (s.id === id ? { ...s, ...partial } : s));
       setCashSales(updated);
       localStorage.setItem(LOCAL_STORAGE_CASH_SALES, JSON.stringify(updated));
+
+      // If CASH_POINT sale quantity changed, adjust remaining points accordingly
+      if (target && target.category === 'CASH_POINT' && partial.quantity !== undefined && partial.quantity !== target.quantity) {
+        const delta = partial.quantity - target.quantity;
+        setCashConfig((prev) => {
+          const nextPoints = Math.max(0, prev.remainingPoints - delta);
+          const merged = { ...prev, remainingPoints: nextPoints };
+          localStorage.setItem(LOCAL_STORAGE_CASH_CONFIG, JSON.stringify(merged));
+          const supabase = getSupabaseClient();
+          if (supabase) {
+            supabase
+              .from('app_configs')
+              .upsert({ key: 'cash_portfolio_config', value: merged, updated_at: new Date().toISOString() })
+              .then();
+          }
+          return merged;
+        });
+      }
 
       const supabase = getSupabaseClient();
       if (supabase) {
@@ -1304,9 +1351,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteCashSale = useCallback(
     async (id: string): Promise<boolean> => {
+      const target = cashSales.find((s) => s.id === id);
       const updated = cashSales.filter((s) => s.id !== id);
       setCashSales(updated);
       localStorage.setItem(LOCAL_STORAGE_CASH_SALES, JSON.stringify(updated));
+
+      // If deleted sale was CASH_POINT, restore points
+      if (target && target.category === 'CASH_POINT') {
+        const restorePoints = Number(target.quantity) || 0;
+        setCashConfig((prev) => {
+          const nextPoints = prev.remainingPoints + restorePoints;
+          const merged = { ...prev, remainingPoints: nextPoints };
+          localStorage.setItem(LOCAL_STORAGE_CASH_CONFIG, JSON.stringify(merged));
+          const supabase = getSupabaseClient();
+          if (supabase) {
+            supabase
+              .from('app_configs')
+              .upsert({ key: 'cash_portfolio_config', value: merged, updated_at: new Date().toISOString() })
+              .then();
+          }
+          return merged;
+        });
+      }
+
+      // If deleted sale was tied to cashItemId, restore item stock
+      if (target && target.cashItemId) {
+        const item = cashItems.find((i) => i.id === target.cashItemId);
+        if (item) {
+          const nextStock = item.stockQty + target.quantity;
+          const nextRemainSale = nextStock * item.targetPricePerUnit;
+          setCashItems((prev) => {
+            const next = prev.map((i) =>
+              i.id === item.id ? { ...i, stockQty: nextStock, remainSale: nextRemainSale } : i
+            );
+            localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(next));
+            return next;
+          });
+          const supabase = getSupabaseClient();
+          if (supabase) {
+            supabase
+              .from('cash_items')
+              .update({ stock_qty: nextStock, remain_sale: nextRemainSale })
+              .eq('id', item.id)
+              .then();
+          }
+        }
+      }
 
       const supabase = getSupabaseClient();
       if (supabase) {
@@ -1318,7 +1408,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return true;
     },
-    [cashSales]
+    [cashSales, cashItems]
   );
 
   const toggleCashSaleStatus = useCallback(

@@ -4,43 +4,88 @@
 
 :root {
   --foreground-rgb: 241, 245, 249;
-  --background-start-rgb: 7, 10, 19;
-  --background-end-rgb: 13, 19, 34;
+  --background-start-rgb: 10, 11, 16;
+  --background-end-rgb: 7, 8, 12;
 }
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: radial-gradient(circle at 50% 0%, #162038 0%, #070a13 80%);
+  background: radial-gradient(circle at 50% -5%, #181d2e 0%, #0a0b10 70%);
+  background-color: #0a0b10;
   min-height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', 'Helvetica Neue', Arial,
     'Noto Sans Thai', sans-serif;
   overflow-x: hidden;
 }
 
 /* Custom scrollbars */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0d1322;
+  background: #0a0b10;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1f2c4c;
+  background: #1e2436;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #f59e0b;
+  background: #6366f1;
+}
+
+/* Stakent Glassmorphic & Gradient Classes */
+.stakent-card {
+  background: linear-gradient(180deg, rgba(20, 24, 36, 0.75) 0%, rgba(14, 17, 26, 0.85) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.stakent-card-highlight {
+  background: linear-gradient(180deg, rgba(30, 27, 56, 0.6) 0%, rgba(18, 16, 36, 0.75) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+}
+
+.stakent-pill-active {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.stakent-glass-chip {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(8px);
+}
+
+/* Primary Stakent Purple/Indigo Gradient Button */
+.stakent-btn-primary {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #9333ea 100%);
+  box-shadow: 0 0 25px -4px rgba(139, 92, 246, 0.45);
+  transition: all 0.2s ease;
+}
+
+.stakent-btn-primary:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 0 30px -2px rgba(139, 92, 246, 0.6);
+  transform: translateY(-1px);
+}
+
+.stakent-btn-primary:active {
+  transform: scale(0.98);
 }
 
 /* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: scale(0.97);
+    transform: scale(0.985);
   }
   to {
     opacity: 1;
@@ -52,11 +97,19 @@ body {
   animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Custom pulse glow */
+/* Glow Utilities */
 .glow-gold {
   box-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
 }
 
 .glow-blue {
   box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
+}
+
+.glow-purple {
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.35);
+}
+
+.glow-green {
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.35);
 }

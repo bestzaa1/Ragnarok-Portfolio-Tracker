@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import { CashItem, CashSale, PaymentStatus } from '@/types';
+import { SparklineGraph } from '@/components/SparklineGraph';
 import {
   Wallet,
   Coins,
@@ -141,137 +142,176 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
       {/* ========================================================= */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: เงินลงทุนเติมเงินเดิม */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-dark-800 to-dark-850 border border-dark-700/80 p-5 shadow-lg">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              เงินลงทุนเติมเงินเดิม
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-slate-700/40 border border-slate-600/50 flex items-center justify-center text-slate-300">
-              <Wallet className="w-4 h-4" />
+        <div className="relative overflow-hidden rounded-2xl bg-[#12151f]/80 backdrop-blur-xl border border-white/[0.08] hover:border-indigo-500/30 transition-all duration-300 p-5 shadow-2xl flex flex-col justify-between group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-indigo-500/10 transition-all" />
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                เงินลงทุนเติมเงินเดิม
+              </span>
+              <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-slate-300 group-hover:scale-105 transition-transform">
+                <Wallet className="w-4 h-4 text-indigo-400" />
+              </div>
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-white tracking-tight font-mono">
+              ฿{cashSummary.initialInvestment.toLocaleString()}
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-            ฿{cashSummary.initialInvestment.toLocaleString()}
-          </div>
-          <div className="mt-3 pt-3 border-t border-dark-700/60 flex items-center justify-between text-xs text-slate-400">
-            <span>ต้นทุนพอร์ตเริ่มต้นเดิม</span>
-            <span className="text-slate-300 font-semibold">100% Cash</span>
+          
+          <div className="mt-2">
+            <SparklineGraph
+              color="purple"
+              trend="steady"
+              height={36}
+            />
+            <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-slate-400">
+              <span>ต้นทุนพอร์ตเริ่มต้นเดิม</span>
+              <span className="text-indigo-400 font-semibold">100% Cash Seed</span>
+            </div>
           </div>
         </div>
 
         {/* Card 2: ยอดขายสดสะสม (Total Cash Sales) */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-dark-800 to-dark-850 border border-dark-700/80 p-5 shadow-lg hover:border-emerald-500/50 transition-all">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400">
-              ยอดขายสดสะสม (Total Cash Sales)
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-              <TrendingUp className="w-4 h-4" />
+        <div className="relative overflow-hidden rounded-2xl bg-[#12151f]/80 backdrop-blur-xl border border-white/[0.08] hover:border-emerald-500/30 transition-all duration-300 p-5 shadow-2xl flex flex-col justify-between group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-emerald-500/10 transition-all" />
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">
+                ยอดขายสดสะสม (Cash Sales)
+              </span>
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform">
+                <TrendingUp className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-white tracking-tight font-mono">
+              ฿{cashSummary.clearedCashSales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-            ฿{cashSummary.clearedCashSales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </div>
-          <div className="mt-3 pt-3 border-t border-dark-700/60 flex items-center justify-between text-xs">
-            <span className="text-slate-400">
-              {cashSales.length} รายการ (ตาม Sales Ledger)
-            </span>
-            {cashSummary.pendingCashSales > 0 ? (
-              <span className="text-amber-400 font-semibold">
-                (รอโอน ฿{cashSummary.pendingCashSales.toLocaleString()})
+
+          <div className="mt-2">
+            <SparklineGraph
+              color="emerald"
+              trend="up"
+              height={36}
+            />
+            <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px]">
+              <span className="text-slate-400">
+                {cashSales.length} รายการ (Ledger)
               </span>
-            ) : (
-              <span className="text-emerald-400 font-semibold">
-                ชำระครบถ้วน 100%
-              </span>
-            )}
+              {cashSummary.pendingCashSales > 0 ? (
+                <span className="text-amber-400 font-semibold font-mono">
+                  (รอโอน ฿{cashSummary.pendingCashSales.toLocaleString()})
+                </span>
+              ) : (
+                <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  ชำระครบถ้วน 100%
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Card 3: พอยท์คงเหลือ (Remaining Points) */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-dark-800 to-dark-850 border border-dark-700/80 p-5 shadow-lg hover:border-sky-500/50 transition-all group">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-sky-400">
-                พอยท์คงเหลือ (Points)
+        <div className="relative overflow-hidden rounded-2xl bg-[#12151f]/80 backdrop-blur-xl border border-white/[0.08] hover:border-purple-500/30 transition-all duration-300 p-5 shadow-2xl flex flex-col justify-between group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-purple-500/10 transition-all" />
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-purple-400">
+                  พอยท์คงเหลือ (Points)
+                </span>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={onOpenEditPoints}
+                    className="px-2 py-0.5 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 text-[10px] font-bold border border-purple-500/30 flex items-center gap-1 transition-all shadow-sm cursor-pointer"
+                    title="คลิกเพื่อแก้ไขยอดพอยท์คงเหลือโดยตรง"
+                  >
+                    <Edit2 className="w-2.5 h-2.5" />
+                    <span>แก้ไขยอด</span>
+                  </button>
+                )}
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-105 transition-transform">
+                <Coins className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-purple-200 tracking-tight flex items-baseline gap-1.5 font-mono">
+              <span>{cashSummary.remainingPoints.toLocaleString()}</span>
+              <span className="text-xs font-sans font-medium text-slate-400">pts</span>
+            </div>
+          </div>
+
+          <div className="mt-2">
+            <SparklineGraph
+              color="blue"
+              trend="steady"
+              height={36}
+            />
+            <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px]">
+              <span className="text-slate-400">ตีเป็นเงิน @ {cashConfig.pointExchangeRate}</span>
+              <span className="text-emerald-400 font-bold font-mono">
+                ฿{cashSummary.pointValueThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={onOpenEditPoints}
-                  className="px-2 py-0.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 text-[10px] font-bold border border-sky-500/30 flex items-center gap-1 transition-all shadow-sm cursor-pointer"
-                  title="คลิกเพื่อแก้ไขยอดพอยท์คงเหลือโดยตรง"
-                >
-                  <Edit2 className="w-2.5 h-2.5" />
-                  <span>แก้ไขยอด</span>
-                </button>
-              )}
             </div>
-            <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400">
-              <Coins className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl sm:text-3xl font-black text-sky-300 tracking-tight flex items-baseline gap-1.5">
-            <span>{cashSummary.remainingPoints.toLocaleString()}</span>
-            <span className="text-xs font-medium text-slate-400">pts</span>
-          </div>
-          <div className="mt-3 pt-3 border-t border-dark-700/60 flex items-center justify-between text-xs">
-            <span className="text-slate-400">ตีเป็นเงิน @ {cashConfig.pointExchangeRate}</span>
-            <span className="text-emerald-400 font-bold">
-              ฿{cashSummary.pointValueThb.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
           </div>
         </div>
 
         {/* Card 4: สถานะพอร์ต & คืนทุน */}
         <div
-          className={`relative overflow-hidden rounded-2xl bg-gradient-to-b from-dark-800 to-dark-850 border p-5 shadow-lg transition-all ${
+          className={`relative overflow-hidden rounded-2xl bg-[#12151f]/80 backdrop-blur-xl border p-5 shadow-2xl transition-all duration-300 flex flex-col justify-between group ${
             cashSummary.isBreakeven
-              ? 'border-emerald-500/40 shadow-green-glow'
-              : 'border-amber-500/40'
+              ? 'border-emerald-500/40 shadow-emerald-glow'
+              : 'border-amber-500/30 hover:border-amber-500/50'
           }`}
         >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">
-              สถานะพอร์ต (Breakeven)
-            </span>
-            <div
-              className={`w-9 h-9 rounded-xl border flex items-center justify-center ${
-                cashSummary.isBreakeven
-                  ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
-                  : 'bg-amber-500/15 border-amber-500/30 text-amber-400'
-              }`}
-            >
-              <Sparkles className="w-4 h-4" />
+          <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl pointer-events-none transition-all ${
+            cashSummary.isBreakeven ? 'bg-emerald-500/10' : 'bg-amber-500/5 group-hover:bg-amber-500/10'
+          }`} />
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">
+                สถานะพอร์ต (Breakeven)
+              </span>
+              <div
+                className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-transform group-hover:scale-105 ${
+                  cashSummary.isBreakeven
+                    ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                    : 'bg-amber-500/15 border-amber-500/30 text-amber-400'
+                }`}
+              >
+                <Sparkles className="w-4 h-4" />
+              </div>
+            </div>
+
+            <div className="flex items-baseline justify-between">
+              <div className="text-2xl sm:text-3xl font-black text-white tracking-tight font-mono">
+                {cashSummary.breakevenPercent.toFixed(1)}%
+              </div>
+              <span className="text-[11px] text-slate-400">
+                {cashSummary.isBreakeven
+                  ? '🎉 คืนทุนแล้ว'
+                  : `ขาดอีก ฿${cashSummary.remainingToBreakeven.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+              </span>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-full h-2 rounded-full bg-black/40 overflow-hidden mt-3 border border-white/[0.06]">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${
+                  cashSummary.isBreakeven
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-emerald-glow'
+                    : 'bg-gradient-to-r from-amber-500 to-yellow-400'
+                }`}
+                style={{ width: `${Math.min(100, cashSummary.breakevenPercent)}%` }}
+              />
             </div>
           </div>
 
-          <div className="flex items-baseline justify-between">
-            <div className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              {cashSummary.breakevenPercent.toFixed(1)}%
-            </div>
-            <span className="text-xs text-slate-400">
-              {cashSummary.isBreakeven
-                ? '🎉 คืนทุนแล้ว'
-                : `ขาดอีก ฿${cashSummary.remainingToBreakeven.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
-            </span>
-          </div>
-
-          {/* Progress bar */}
-          <div className="w-full h-2 rounded-full bg-dark-700 overflow-hidden mt-3">
-            <div
-              className={`h-full rounded-full transition-all duration-700 ${
-                cashSummary.isBreakeven
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
-                  : 'bg-gradient-to-r from-amber-500 to-yellow-400'
-              }`}
-              style={{ width: `${Math.min(100, cashSummary.breakevenPercent)}%` }}
-            />
-          </div>
-
-          <div className="mt-2 text-[11px] text-slate-400 flex justify-between">
-            <span>มูลค่าสต็อกคงเหลือ (ตามชีต):</span>
-            <span className="text-amber-300 font-bold">
+          <div className="mt-3 pt-3 border-t border-white/[0.06] text-[11px] text-slate-400 flex justify-between">
+            <span>มูลค่าสต็อกคงเหลือ (ชีต):</span>
+            <span className="text-amber-300 font-bold font-mono">
               ฿{totalStockRemainSale.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
@@ -281,11 +321,11 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
       {/* ========================================================= */}
       {/* 2. ตารางคลังของแถมคงเหลือ (แยก Server) - 1:1 กับชีต        */}
       {/* ========================================================= */}
-      <div className="rounded-2xl bg-dark-850 border border-dark-700 overflow-hidden shadow-xl">
+      <div className="rounded-2xl bg-[#12151f]/90 border border-white/[0.08] overflow-hidden shadow-2xl backdrop-blur-xl">
         {/* Banner Style Header Matching User Sheet */}
-        <div className="bg-gradient-to-r from-amber-600 via-amber-500 to-orange-500 px-5 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 text-dark-950">
+        <div className="bg-gradient-to-r from-amber-600/90 via-amber-500/90 to-orange-500/90 px-5 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 text-dark-950 shadow-md">
           <div className="flex items-center gap-2.5">
-            <Table className="w-6 h-6 text-dark-950 stroke-[2.5]" />
+            <Table className="w-5 h-5 text-dark-950 stroke-[2.5]" />
             <div>
               <h3 className="text-base sm:text-lg font-black tracking-tight">
                 1. ตารางคลังของแถมคงเหลือ (แยก Server)
@@ -305,7 +345,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                     syncFromPromotionSheet();
                   }
                 }}
-                className="px-3 py-1.5 rounded-xl bg-dark-950/20 hover:bg-dark-950/40 text-dark-950 font-bold text-xs flex items-center gap-1.5 transition-colors border border-dark-950/20"
+                className="px-3 py-1.5 rounded-xl bg-dark-950/20 hover:bg-dark-950/40 text-dark-950 font-bold text-xs flex items-center gap-1.5 transition-colors border border-dark-950/20 cursor-pointer"
                 title="รีเซ็ต/ซิงค์ข้อมูลให้ตรงตามชีต 100%"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
@@ -313,22 +353,22 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
               </button>
             )}
 
-            <div className="px-4 py-1.5 rounded-xl bg-dark-950 text-white font-black text-sm sm:text-base border border-amber-300/40 shadow-md">
-              <span className="text-amber-400 mr-1.5 text-xs font-semibold uppercase">Remain Sale:</span>
+            <div className="px-4 py-1.5 rounded-xl bg-dark-950 text-white font-black text-sm sm:text-base border border-amber-300/40 shadow-md font-mono">
+              <span className="text-amber-400 mr-1.5 text-xs font-semibold uppercase font-sans">Remain Sale:</span>
               <span>฿{totalStockRemainSale.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
         </div>
 
         {/* Filter Controls Bar */}
-        <div className="p-3.5 bg-dark-900 border-b border-dark-750 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="p-3.5 bg-black/30 border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
           <div className="flex items-center flex-wrap gap-2">
             {/* Server tabs */}
             <button
               onClick={() => setStockServerFilter('ALL')}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
                 stockServerFilter === 'ALL'
-                  ? 'bg-dark-700 text-white border border-dark-600'
+                  ? 'bg-white/[0.1] text-white border border-white/[0.15] shadow-sm'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -336,27 +376,27 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
             </button>
             <button
               onClick={() => setStockServerFilter('Baphomet')}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                 stockServerFilter === 'Baphomet'
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
               <span>Baphomet</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-dark-800 text-amber-400">
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/40 text-amber-400 font-mono">
                 ฿{baphometRemainSum.toLocaleString()}
               </span>
             </button>
             <button
               onClick={() => setStockServerFilter('Moonlight')}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                 stockServerFilter === 'Moonlight'
-                  ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+                  ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
               <span>Moonlight</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-dark-800 text-sky-400">
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/40 text-sky-400 font-mono">
                 ฿{moonlightRemainSum.toLocaleString()}
               </span>
             </button>
@@ -367,7 +407,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                 type="checkbox"
                 checked={onlyInStock}
                 onChange={(e) => setOnlyInStock(e.target.checked)}
-                className="rounded bg-dark-800 border-dark-600 text-amber-500 focus:ring-0"
+                className="rounded bg-black/40 border-white/[0.1] text-amber-500 focus:ring-0"
               />
               <span>เฉพาะที่ยังเหลือของ (Remain &gt; 0)</span>
             </label>
@@ -382,7 +422,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                 placeholder="ค้นหาชื่อไอเทม..."
                 value={stockSearchTerm}
                 onChange={(e) => setStockSearchTerm(e.target.value)}
-                className="w-full bg-dark-800 border border-dark-600 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                className="w-full bg-black/40 border border-white/[0.08] rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400/60"
               />
             </div>
 
@@ -390,7 +430,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
             {isAdmin && (
               <button
                 onClick={onOpenAddItem}
-                className="px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 text-slate-200 border border-dark-600 font-semibold flex items-center gap-1 transition-colors"
+                className="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-slate-200 border border-white/[0.1] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5 text-amber-400" />
                 <span>เพิ่มแถวใหม่</span>
@@ -402,32 +442,32 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
         {/* The Exact Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
-            <thead className="bg-[#1b3d2f] text-slate-100 border-b border-dark-700 select-none uppercase tracking-wider text-[11px]">
+            <thead className="bg-[#161a29]/90 text-slate-300 border-b border-white/[0.08] select-none uppercase tracking-wider text-[11px]">
               <tr>
-                <th className="py-2.5 px-3 font-bold border-r border-[#265340]">Server</th>
-                <th className="py-2.5 px-3 font-bold border-r border-[#265340]">รายการไอเทมแถม</th>
-                <th className="py-2.5 px-3 font-bold text-right border-r border-[#265340]">
+                <th className="py-3 px-3.5 font-bold border-r border-white/[0.06]">Server</th>
+                <th className="py-3 px-3.5 font-bold border-r border-white/[0.06]">รายการไอเทมแถม</th>
+                <th className="py-3 px-3.5 font-bold text-right border-r border-white/[0.06]">
                   จำนวนทั้งหมด (PC)
                 </th>
-                <th className="py-2.5 px-3 font-bold text-right border-r border-[#265340]">
+                <th className="py-3 px-3.5 font-bold text-right border-r border-white/[0.06]">
                   ขายไปแล้ว
                 </th>
-                <th className="py-2.5 px-3 font-bold text-center border-r border-[#265340]">
+                <th className="py-3 px-3.5 font-bold text-center border-r border-white/[0.06]">
                   คงเหลือ (Remain)
                 </th>
-                <th className="py-2.5 px-3 font-bold text-right border-r border-[#265340]">
+                <th className="py-3 px-3.5 font-bold text-right border-r border-white/[0.06]">
                   Total Sale
                 </th>
-                <th className="py-2.5 px-3 font-bold text-right border-r border-[#265340]">
+                <th className="py-3 px-3.5 font-bold text-right border-r border-white/[0.06]">
                   Forecast price
                 </th>
-                <th className="py-2.5 px-3 font-bold text-right border-r border-[#265340]">
+                <th className="py-3 px-3.5 font-bold text-right border-r border-white/[0.06]">
                   Remain Sale
                 </th>
-                {isAdmin && <th className="py-2.5 px-3 font-bold text-center">Action</th>}
+                {isAdmin && <th className="py-3 px-3.5 font-bold text-center">Action</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-dark-750">
+            <tbody className="divide-y divide-white/[0.04]">
               {filteredStockItems.length === 0 ? (
                 <tr>
                   <td colSpan={isAdmin ? 9 : 8} className="py-12 text-center text-slate-500">
@@ -447,12 +487,12 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                   return (
                     <tr
                       key={item.id}
-                      className="hover:bg-dark-800/70 transition-colors group"
+                      className="hover:bg-white/[0.025] transition-colors group"
                     >
                       {/* Server */}
-                      <td className="py-2.5 px-3 whitespace-nowrap border-r border-dark-750">
+                      <td className="py-2.5 px-3.5 whitespace-nowrap border-r border-white/[0.04]">
                         <span
-                          className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                             item.server.toLowerCase().includes('bapho')
                               ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
                               : 'bg-sky-500/10 text-sky-300 border border-sky-500/30'
@@ -463,7 +503,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                       </td>
 
                       {/* Item Name */}
-                      <td className="py-2.5 px-3 font-semibold text-white whitespace-nowrap border-r border-dark-750">
+                      <td className="py-2.5 px-3.5 font-semibold text-white whitespace-nowrap border-r border-white/[0.04]">
                         <span className={item.stockQty <= 0 && !isRemainPositive ? 'text-slate-400' : ''}>
                           {item.name}
                         </span>
@@ -475,30 +515,30 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                       </td>
 
                       {/* Total Qty (PC) */}
-                      <td className="py-2.5 px-3 text-right text-slate-300 font-semibold border-r border-dark-750">
+                      <td className="py-2.5 px-3.5 text-right text-slate-300 font-semibold border-r border-white/[0.04] font-mono">
                         {item.totalQty !== undefined ? item.totalQty : item.stockQty + (item.soldQty || 0)}
                       </td>
 
                       {/* Sold Qty */}
-                      <td className="py-2.5 px-3 text-right text-slate-300 border-r border-dark-750">
+                      <td className="py-2.5 px-3.5 text-right text-slate-300 border-r border-white/[0.04] font-mono">
                         {item.soldQty !== undefined ? item.soldQty : 0}
                       </td>
 
                       {/* Remain with Quick +/- adjust (Admin only buttons) */}
-                      <td className="py-2.5 px-3 whitespace-nowrap text-center border-r border-dark-750">
+                      <td className="py-2.5 px-3.5 whitespace-nowrap text-center border-r border-white/[0.04]">
                         {isAdmin ? (
-                          <div className="inline-flex items-center gap-1.5 bg-dark-900 border border-dark-700 rounded-lg px-2 py-0.5">
+                          <div className="inline-flex items-center gap-1.5 bg-black/40 border border-white/[0.08] rounded-xl px-2 py-0.5">
                             <button
                               onClick={() => adjustCashItemStock(item.id, -1)}
                               disabled={item.stockQty <= 0}
-                              className="w-4 h-4 rounded bg-dark-750 hover:bg-rose-500 hover:text-white text-slate-400 flex items-center justify-center transition-colors disabled:opacity-30"
+                              className="w-5 h-5 rounded-lg bg-white/[0.04] hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 flex items-center justify-center transition-all disabled:opacity-20 cursor-pointer"
                               title="ลดสต็อก 1"
                             >
                               <Minus className="w-2.5 h-2.5" />
                             </button>
 
                             <span
-                              className={`font-black min-w-[24px] text-center text-xs ${
+                              className={`font-black min-w-[24px] text-center text-xs font-mono ${
                                 item.stockQty > 0 ? 'text-white' : 'text-slate-500'
                               }`}
                             >
@@ -507,7 +547,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
 
                             <button
                               onClick={() => adjustCashItemStock(item.id, 1)}
-                              className="w-4 h-4 rounded bg-dark-750 hover:bg-emerald-500 hover:text-white text-slate-400 flex items-center justify-center transition-colors"
+                              className="w-5 h-5 rounded-lg bg-white/[0.04] hover:bg-emerald-500/20 hover:text-emerald-400 text-slate-400 flex items-center justify-center transition-all cursor-pointer"
                               title="เพิ่มสต็อก 1"
                             >
                               <Plus className="w-2.5 h-2.5" />
@@ -515,7 +555,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                           </div>
                         ) : (
                           <span
-                            className={`font-black min-w-[28px] text-center text-xs px-2.5 py-1 rounded bg-dark-900 border border-dark-700/60 inline-block ${
+                            className={`font-black min-w-[28px] text-center text-xs px-2.5 py-1 rounded-xl bg-black/40 border border-white/[0.06] inline-block font-mono ${
                               item.stockQty > 0 ? 'text-white' : 'text-slate-500'
                             }`}
                           >
@@ -526,9 +566,9 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
 
                       {/* Total Sale (Yellow highlight if zero like in sheet) */}
                       <td
-                        className={`py-2.5 px-3 text-right font-semibold border-r border-dark-750 whitespace-nowrap ${
+                        className={`py-2.5 px-3.5 text-right font-semibold border-r border-white/[0.04] whitespace-nowrap font-mono ${
                           isTotalSaleZero
-                            ? 'bg-yellow-400/10 text-yellow-300 font-normal'
+                            ? 'bg-yellow-400/5 text-yellow-300 font-normal'
                             : 'text-white'
                         }`}
                       >
@@ -537,9 +577,9 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
 
                       {/* Forecast price (Pink/soft red highlight if has value like in sheet) */}
                       <td
-                        className={`py-2.5 px-3 text-right font-medium border-r border-dark-750 whitespace-nowrap ${
+                        className={`py-2.5 px-3.5 text-right font-medium border-r border-white/[0.04] whitespace-nowrap font-mono ${
                           item.targetPricePerUnit > 0
-                            ? 'bg-pink-500/10 text-pink-200'
+                            ? 'bg-pink-500/5 text-pink-200'
                             : 'text-slate-500'
                         }`}
                       >
@@ -548,10 +588,10 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
 
                       {/* Remain Sale (Soft green background if 0, bright green if has value like in sheet) */}
                       <td
-                        className={`py-2.5 px-3 text-right font-bold border-r border-dark-750 whitespace-nowrap ${
+                        className={`py-2.5 px-3.5 text-right font-bold border-r border-white/[0.04] whitespace-nowrap font-mono ${
                           remainSaleVal > 0
-                            ? 'bg-emerald-500/20 text-emerald-300 font-black'
-                            : 'bg-[#2d4739]/30 text-slate-500'
+                            ? 'bg-emerald-500/10 text-emerald-300 font-black'
+                            : 'bg-white/[0.01] text-slate-500'
                         }`}
                       >
                         {remainSaleVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -559,15 +599,15 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
 
                       {/* Actions - Admin Only */}
                       {isAdmin && (
-                        <td className="py-2.5 px-3 whitespace-nowrap text-center">
-                          <div className="flex items-center justify-center gap-1">
+                        <td className="py-2.5 px-3.5 whitespace-nowrap text-center">
+                          <div className="flex items-center justify-center gap-1.5">
                             <button
                               onClick={() => onOpenSellItem(item)}
                               disabled={item.stockQty <= 0}
-                              className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all ${
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
                                 item.stockQty > 0
-                                  ? 'bg-emerald-500/20 hover:bg-emerald-500 hover:text-dark-950 text-emerald-300 border border-emerald-500/40'
-                                  : 'bg-dark-750 text-slate-600 cursor-not-allowed'
+                                  ? 'bg-emerald-500/15 hover:bg-emerald-500 text-emerald-300 hover:text-dark-950 border border-emerald-500/30 shadow-sm'
+                                  : 'bg-white/[0.02] text-slate-600 cursor-not-allowed border border-transparent'
                               }`}
                               title="ตัดขายรายการนี้"
                             >
@@ -576,7 +616,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
 
                             <button
                               onClick={() => onOpenEditItem(item)}
-                              className="p-1 rounded text-slate-400 hover:text-sky-300 hover:bg-dark-700 transition-colors"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-sky-300 hover:bg-white/[0.06] transition-colors cursor-pointer"
                               title="แก้ไข"
                             >
                               <Edit2 className="w-3 h-3" />
@@ -588,7 +628,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                                   deleteCashItem(item.id);
                                 }
                               }}
-                              className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-dark-700 transition-colors"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-white/[0.06] transition-colors cursor-pointer"
                               title="ลบ"
                             >
                               <Trash2 className="w-3 h-3" />
@@ -605,15 +645,15 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
         </div>
 
         {/* Table Bottom Aggregates matching sheet summary */}
-        <div className="p-3.5 bg-dark-900 border-t border-dark-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="p-3.5 bg-black/40 border-t border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
           <div className="text-slate-400">
             แสดง <strong>{filteredStockItems.length}</strong> รายการ | ยอดขายแล้วรวม:{' '}
-            <strong className="text-white">฿{filteredTotalSaleSum.toLocaleString()} THB</strong>
+            <strong className="text-white font-mono">฿{filteredTotalSaleSum.toLocaleString()} THB</strong>
           </div>
 
           <div className="flex items-center gap-4">
             <span className="text-slate-300 font-semibold">ยอดรวมมูลค่าคงเหลือ (Remain Sale):</span>
-            <span className="text-base font-black text-emerald-400 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+            <span className="text-base font-black text-emerald-400 px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 font-mono shadow-sm">
               ฿{filteredRemainSaleSum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} THB
             </span>
           </div>
@@ -623,20 +663,20 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
       {/* ========================================================= */}
       {/* 3. ตารางบันทึกยอดขาย (Sales Ledger) - 1:1 กับไฟล์ PDF     */}
       {/* ========================================================= */}
-      <div className="rounded-2xl bg-dark-850 border border-dark-700 overflow-hidden shadow-lg">
-        <div className="p-4 border-b border-dark-700 flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="rounded-2xl bg-[#12151f]/90 border border-white/[0.08] overflow-hidden shadow-2xl backdrop-blur-xl">
+        <div className="p-4 border-b border-white/[0.06] flex flex-col md:flex-row md:items-center justify-between gap-3 bg-black/20">
           <div>
             <h4 className="font-bold text-white text-base flex items-center gap-2">
               <ShoppingBag className="w-5 h-5 text-emerald-400" />
               <span>3. ตารางบันทึกยอดขาย (Sales Ledger)</span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-dark-700 text-slate-300">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/[0.08] text-slate-300 font-mono">
                 {filteredSales.length} รายการ
               </span>
             </h4>
             <p className="text-xs text-slate-400 mt-0.5">
-              ยอดขายสดสะสมตามสมุดบัญชี ฿{cashSummary.clearedCashSales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} THB
+              ยอดขายสดสะสมตามสมุดบัญชี <span className="text-white font-mono font-bold">฿{cashSummary.clearedCashSales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} THB</span>
               {cashSummary.pendingCashSales > 0 ? (
-                <span className="text-amber-400 ml-1 font-semibold">
+                <span className="text-amber-400 ml-1 font-semibold font-mono">
                   (รอโอน ฿{cashSummary.pendingCashSales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                 </span>
               ) : (
@@ -656,7 +696,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                     syncFromSalesLedgerPdf();
                   }
                 }}
-                className="px-3 py-1.5 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-300 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-dark-600 transition-colors shadow-sm"
+                className="px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-slate-300 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-white/[0.1] transition-colors shadow-sm cursor-pointer"
                 title="รีเซ็ต/ซิงค์ข้อมูลยอดขายให้ตรงกับไฟล์ PDF 60 รายการ 100%"
               >
                 <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
@@ -668,7 +708,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
             {isAdmin && (
               <button
                 onClick={() => onOpenSellItem()}
-                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-dark-950 font-bold text-xs flex items-center gap-1.5 shadow-green-glow"
+                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-dark-950 font-bold text-xs flex items-center gap-1.5 shadow-emerald-glow transition-all cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                 <span>+ บันทึกการขาย Cash Item</span>
@@ -679,7 +719,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
             <select
               value={salesServerFilter}
               onChange={(e) => setSalesServerFilter(e.target.value as any)}
-              className="bg-dark-900 border border-dark-600 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-400"
+              className="bg-black/40 border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-400/60 cursor-pointer"
             >
               <option value="ALL">เซิร์ฟเวอร์ทั้งหมด</option>
               <option value="Baphomet">Baphomet</option>
@@ -690,7 +730,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
             <select
               value={salesStatusFilter}
               onChange={(e) => setSalesStatusFilter(e.target.value as any)}
-              className="bg-dark-900 border border-dark-600 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-400"
+              className="bg-black/40 border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-400/60 cursor-pointer"
             >
               <option value="ALL">สถานะทั้งหมด</option>
               <option value="Clear">🟢 Clear (ชำระแล้ว)</option>
@@ -705,7 +745,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                 placeholder="ค้นหาชื่อลูกค้า, สินค้า..."
                 value={salesSearchTerm}
                 onChange={(e) => setSalesSearchTerm(e.target.value)}
-                className="w-full bg-dark-900 border border-dark-600 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                className="w-full bg-black/40 border border-white/[0.08] rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400/60"
               />
             </div>
           </div>
@@ -714,7 +754,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
         {/* Sales Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-dark-900/90 text-slate-400 border-b border-dark-700 select-none uppercase tracking-wider text-[11px]">
+            <thead className="bg-[#161a29]/90 text-slate-300 border-b border-white/[0.08] select-none uppercase tracking-wider text-[11px]">
               <tr>
                 <th className="py-3 px-4 font-semibold">รายการไอเทม</th>
                 <th className="py-3 px-4 font-semibold">หมวดหมู่</th>
@@ -729,7 +769,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                 {isAdmin && <th className="py-3 px-4 font-semibold text-center">จัดการ</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-dark-750">
+            <tbody className="divide-y divide-white/[0.04]">
               {filteredSales.length === 0 ? (
                 <tr>
                   <td colSpan={isAdmin ? 11 : 10} className="py-12 text-center text-slate-500">
@@ -739,7 +779,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                 </tr>
               ) : (
                 filteredSales.map((sale) => (
-                  <tr key={sale.id} className="hover:bg-dark-800/60 transition-colors">
+                  <tr key={sale.id} className="hover:bg-white/[0.025] transition-colors">
                     {/* Item Name */}
                     <td className="py-3 px-4 font-bold text-white whitespace-nowrap">
                       {sale.itemName}
@@ -748,15 +788,15 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                     {/* Category */}
                     <td className="py-3 px-4 whitespace-nowrap">
                       {sale.category === 'PROMO_FREEBIE' ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
                           🎁 ของแถม
                         </span>
                       ) : sale.category === 'CASH_POINT' ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/40">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/40">
                           💎 ขายพอยท์
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-500/10 text-sky-300 border border-sky-500/30">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-sky-500/10 text-sky-300 border border-sky-500/30">
                           🛒 ซื้อพอยท์
                         </span>
                       )}
@@ -769,17 +809,17 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
 
                     {/* Customer */}
                     <td className="py-3 px-4 font-medium text-white whitespace-nowrap">
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5">
                         <User className="w-3.5 h-3.5 text-slate-400" />
                         <span>{sale.customerName}</span>
                       </div>
                     </td>
 
                     {/* Quantity */}
-                    <td className="py-3 px-4 text-right font-bold text-slate-200">
+                    <td className="py-3 px-4 text-right font-bold text-slate-200 font-mono">
                       {sale.category === 'CASH_POINT' ? (
                         <span className="text-purple-300">
-                          {sale.quantity.toLocaleString()} <span className="text-[10px] text-slate-400">pts</span>
+                          {sale.quantity.toLocaleString()} <span className="text-[10px] text-slate-400 font-sans">pts</span>
                         </span>
                       ) : (
                         sale.quantity.toLocaleString()
@@ -787,7 +827,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                     </td>
 
                     {/* Unit Price */}
-                    <td className="py-3 px-4 text-right text-slate-300">
+                    <td className="py-3 px-4 text-right text-slate-300 font-mono">
                       {sale.category === 'CASH_POINT' ? (
                         <span>฿{sale.unitPrice}/pt</span>
                       ) : (
@@ -796,7 +836,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                     </td>
 
                     {/* Total Amount */}
-                    <td className="py-3 px-4 text-right font-black text-emerald-400 text-sm">
+                    <td className="py-3 px-4 text-right font-black text-emerald-400 text-sm font-mono">
                       ฿{sale.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
 
@@ -805,16 +845,16 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                       {isAdmin ? (
                         <button
                           onClick={() => toggleCashSaleStatus(sale.id)}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                             sale.status === 'Clear'
-                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25'
+                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 shadow-emerald-glow'
                               : 'bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25'
                           }`}
                           title="คลิกเพื่อสลับสถานะทันที"
                         >
                           {sale.status === 'Clear' ? (
                             <>
-                              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                               <span>Clear</span>
                             </>
                           ) : (
@@ -826,15 +866,15 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                         </button>
                       ) : (
                         <div
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
                             sale.status === 'Clear'
-                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-emerald-glow'
                               : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
                           }`}
                         >
                           {sale.status === 'Clear' ? (
                             <>
-                              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                               <span>Clear</span>
                             </>
                           ) : (
@@ -848,7 +888,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                     </td>
 
                     {/* Date */}
-                    <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
+                    <td className="py-3 px-4 text-slate-400 whitespace-nowrap font-mono text-[11px]">
                       {sale.date ? new Date(sale.date).toLocaleString('th-TH', {
                         day: '2-digit',
                         month: 'short',
@@ -866,10 +906,10 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                     {/* Actions - Admin Only */}
                     {isAdmin && (
                       <td className="py-3 px-4 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1">
+                        <div className="flex items-center justify-center gap-1.5">
                           <button
                             onClick={() => onOpenEditSale(sale)}
-                            className="p-1 rounded text-slate-400 hover:text-sky-300 hover:bg-dark-700 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-sky-300 hover:bg-white/[0.06] transition-colors cursor-pointer"
                             title="แก้ไข"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -880,7 +920,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                                 deleteCashSale(sale.id);
                               }
                             }}
-                            className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-dark-700 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-white/[0.06] transition-colors cursor-pointer"
                             title="ลบ"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -896,14 +936,14 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
         </div>
 
         {/* Sales Table Bottom Aggregate */}
-        <div className="p-3.5 bg-dark-900 border-t border-dark-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="p-3.5 bg-black/40 border-t border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
           <div className="text-slate-400">
-            แสดง <strong className="text-white">{filteredSales.length}</strong> จากทั้งหมด {cashSales.length} รายการ
-            {cashSales.length === 60 && <span className="ml-1 text-emerald-400 font-medium">(ครบถ้วนตามไฟล์ PDF)</span>}
+            แสดง <strong className="text-white font-mono">{filteredSales.length}</strong> จากทั้งหมด {cashSales.length} รายการ
+            {cashSales.length === 60 && <span className="ml-1.5 text-emerald-400 font-semibold">(ครบถ้วนตามไฟล์ PDF)</span>}
           </div>
           <div className="flex items-center gap-4">
             <span className="text-slate-300 font-semibold">ยอดขายรวมตามรายการที่แสดง:</span>
-            <span className="text-base font-black text-emerald-400 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+            <span className="text-base font-black text-emerald-400 px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 font-mono shadow-sm">
               ฿{filteredSalesTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} THB
             </span>
           </div>

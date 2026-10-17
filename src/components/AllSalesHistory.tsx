@@ -163,9 +163,11 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
   return (
     <div className="space-y-4">
       {/* Filters and Search Bar */}
-      <div className="rounded-2xl bg-dark-850 border border-dark-700 p-4 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <History className="w-5 h-5 text-amber-400" />
+      <div className="rounded-2xl bg-[#12151f]/90 border border-white/[0.08] p-4 shadow-2xl backdrop-blur-xl flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+            <History className="w-4 h-4" />
+          </div>
           <div>
             <h4 className="font-bold text-white text-base">สมุดบันทึกประวัติการขายรวมทุกรายการ</h4>
             <p className="text-xs text-slate-400">
@@ -177,20 +179,20 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
         {/* Filter controls */}
         <div className="flex items-center flex-wrap gap-2.5">
           <div className="relative min-w-[200px] flex-1 sm:flex-initial">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
             <input
               type="text"
               placeholder="ค้นหาชื่อลูกค้า, สินค้า, บันทึก..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-dark-900 border border-dark-600 rounded-lg pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+              className="w-full bg-black/40 border border-white/[0.08] rounded-lg pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400/60"
             />
           </div>
 
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value as any)}
-            className="bg-dark-900 border border-dark-600 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-400 cursor-pointer"
+            className="bg-black/40 border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-400/60 cursor-pointer"
           >
             <option value="ALL">สินค้าทุกประเภท</option>
             <option value="ROC">🥚 ไข่สุ่ม ROC (Classic)</option>
@@ -202,7 +204,7 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="bg-dark-900 border border-dark-600 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-400 cursor-pointer"
+            className="bg-black/40 border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-400/60 cursor-pointer"
           >
             <option value="ALL">สถานะทั้งหมด</option>
             <option value="Clear">🟢 Clear (ชำระแล้ว)</option>
@@ -211,7 +213,7 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
 
           <button
             onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-            className="px-2.5 py-1.5 bg-dark-900 border border-dark-600 rounded-lg text-xs text-slate-300 hover:text-white flex items-center gap-1"
+            className="px-2.5 py-1.5 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] rounded-lg text-xs text-slate-300 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
           >
             <ArrowUpDown className="w-3.5 h-3.5" />
             <span>{sortOrder === 'desc' ? 'ล่าสุดก่อน' : 'เก่าสุดก่อน'}</span>
@@ -220,10 +222,10 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl bg-dark-850 border border-dark-700 overflow-hidden shadow-lg">
+      <div className="rounded-2xl bg-[#12151f]/90 border border-white/[0.08] overflow-hidden shadow-2xl backdrop-blur-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-dark-900/80 text-slate-400 border-b border-dark-700 select-none uppercase tracking-wider text-[11px]">
+            <thead className="bg-[#161a29]/90 text-slate-300 border-b border-white/[0.08] select-none uppercase tracking-wider text-[11px]">
               <tr>
                 <th className="py-3 px-4 font-semibold">ประเภท / รายการ</th>
                 <th className="py-3 px-4 font-semibold">รายละเอียด / โค้ด</th>
@@ -237,7 +239,7 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                 {isAdmin && <th className="py-3 px-4 font-semibold text-center">จัดการ</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-dark-750">
+            <tbody className="divide-y divide-white/[0.04]">
               {filteredList.length === 0 ? (
                 <tr>
                   <td colSpan={isAdmin ? 10 : 9} className="py-12 text-center text-slate-500">
@@ -247,23 +249,23 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                 </tr>
               ) : (
                 filteredList.map((item) => (
-                  <tr key={item.id} className="hover:bg-dark-800/60 transition-colors">
+                  <tr key={item.id} className="hover:bg-white/[0.025] transition-colors">
                     {/* Source / Type badge */}
                     <td className="py-3 px-4 whitespace-nowrap">
                       {item.sourceType === 'EGG_ROC' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-300 border border-rose-500/30">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-300 border border-rose-500/30">
                           <Egg className="w-3 h-3" /> ไข่ ROC
                         </span>
                       ) : item.sourceType === 'EGG_RO' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-300 border border-sky-500/30">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-sky-500/10 text-sky-300 border border-sky-500/30">
                           <Egg className="w-3 h-3" /> ไข่ RO
                         </span>
                       ) : item.sourceType === 'PHYSICAL_FIGURE' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
                           <Package className="w-3 h-3" /> Figure
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-300 border border-purple-500/30">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/10 text-purple-300 border border-purple-500/30">
                           <Layers className="w-3 h-3" /> Keycap
                         </span>
                       )}
@@ -283,17 +285,17 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                     </td>
 
                     {/* Qty */}
-                    <td className="py-3 px-4 text-right font-bold text-slate-200 whitespace-nowrap">
+                    <td className="py-3 px-4 text-right font-bold text-slate-200 whitespace-nowrap font-mono">
                       {item.quantityText}
                     </td>
 
                     {/* Price / unit */}
-                    <td className="py-3 px-4 text-right text-slate-300 whitespace-nowrap">
+                    <td className="py-3 px-4 text-right text-slate-300 whitespace-nowrap font-mono">
                       ฿{item.pricePerUnit.toLocaleString()}
                     </td>
 
                     {/* Total Amount */}
-                    <td className="py-3 px-4 text-right font-black text-amber-400 text-sm whitespace-nowrap">
+                    <td className="py-3 px-4 text-right font-black text-amber-400 text-sm whitespace-nowrap font-mono">
                       ฿{item.totalAmount.toLocaleString()}
                     </td>
 
@@ -305,16 +307,16 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                             if (item.originalEgg) toggleEggSaleStatus(item.originalEgg.id);
                             if (item.originalPhys) togglePhysicalSaleStatus(item.originalPhys.id);
                           }}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                             item.status === 'Clear'
-                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25'
+                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 shadow-emerald-glow'
                               : 'bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25'
                           }`}
                           title="คลิกเพื่อสลับสถานะทันที"
                         >
                           {item.status === 'Clear' ? (
                             <>
-                              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                               <span>Clear</span>
                             </>
                           ) : (
@@ -326,15 +328,15 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                         </button>
                       ) : (
                         <div
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
                             item.status === 'Clear'
-                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-emerald-glow'
                               : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
                           }`}
                         >
                           {item.status === 'Clear' ? (
                             <>
-                              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                               <span>Clear</span>
                             </>
                           ) : (
@@ -348,7 +350,7 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                     </td>
 
                     {/* Date */}
-                    <td className="py-3 px-4 text-slate-400 whitespace-nowrap">
+                    <td className="py-3 px-4 text-slate-400 whitespace-nowrap font-mono text-[11px]">
                       {item.date ? new Date(item.date).toLocaleString('th-TH', {
                         day: '2-digit',
                         month: 'short',
@@ -366,13 +368,13 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                     {/* Actions - Admin Only */}
                     {isAdmin && (
                       <td className="py-3 px-4 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1">
+                        <div className="flex items-center justify-center gap-1.5">
                           <button
                             onClick={() => {
                               if (item.originalEgg) onEditEgg(item.originalEgg);
                               if (item.originalPhys) onEditPhysical(item.originalPhys);
                             }}
-                            className="p-1 rounded text-slate-400 hover:text-amber-300 hover:bg-dark-700 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-amber-300 hover:bg-white/[0.06] transition-colors cursor-pointer"
                             title="แก้ไข"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -384,7 +386,7 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                                 if (item.originalPhys) deletePhysicalSale(item.originalPhys.id);
                               }
                             }}
-                            className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-dark-700 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-white/[0.06] transition-colors cursor-pointer"
                             title="ลบ"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -401,22 +403,22 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
 
         {/* Bottom Aggregates */}
         {filteredList.length > 0 && (
-          <div className="p-3 bg-dark-900 border-t border-dark-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="p-3.5 bg-black/40 border-t border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             <div className="text-slate-400">
-              แสดง <strong>{filteredList.length}</strong> รายการขายทั้งหมด
+              แสดง <strong className="text-white font-mono">{filteredList.length}</strong> รายการขายทั้งหมด
             </div>
 
             <div className="flex items-center flex-wrap gap-4 text-xs font-semibold">
-              <div className="flex items-center gap-1.5 text-emerald-400">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <div className="flex items-center gap-1.5 text-emerald-400 font-mono">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-emerald-glow" />
                 <span>ชำระแล้ว: ฿{clearedAmount.toLocaleString()}</span>
               </div>
-              <div className="flex items-center gap-1.5 text-amber-400">
+              <div className="flex items-center gap-1.5 text-amber-400 font-mono">
                 <span className="w-2 h-2 rounded-full bg-amber-400" />
                 <span>รอโอน: ฿{pendingAmount.toLocaleString()}</span>
               </div>
-              <div className="text-white bg-dark-800 px-3 py-1 rounded-lg border border-dark-600 font-bold">
-                ยอดรวมหน้านี้: ฿{totalAmount.toLocaleString()}
+              <div className="text-white bg-white/[0.06] px-3.5 py-1.5 rounded-xl border border-white/[0.1] font-bold font-mono shadow-sm">
+                ยอดรวมหน้านี้: ฿{totalAmount.toLocaleString()} THB
               </div>
             </div>
           </div>

@@ -10,6 +10,7 @@ import { PhysicalSalesTracker } from '@/components/PhysicalSalesTracker';
 import { AllSalesHistory } from '@/components/AllSalesHistory';
 import { CashItemTracker } from '@/components/CashItemTracker';
 import { CombinedCashFlowTracker } from '@/components/CombinedCashFlowTracker';
+import GocLibraTracker from '@/components/GocLibraTracker';
 import { QuickSaleModal, SaleModalType } from '@/components/QuickSaleModal';
 import { AddEditCashItemModal } from '@/components/AddEditCashItemModal';
 import { CashSaleModal } from '@/components/CashSaleModal';
@@ -315,6 +316,15 @@ export default function HomePage() {
                 onEditEgg={handleEditEggSale}
                 onEditPhysical={handleEditPhysicalSale}
               />
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* MODULE 5: ✨ GOC & Libra Promo (14.25k) (18 ต.ค. 2026)     */}
+          {/* ========================================================= */}
+          {activeModule === 'GOC_LIBRA' && (
+            <div>
+              <GocLibraTracker />
             </div>
           )}
         </main>

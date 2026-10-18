@@ -20,7 +20,7 @@ import {
   FileSpreadsheet,
 } from 'lucide-react';
 
-export type MainNavModule = 'CASH_FLOW' | 'URGENT_CALL' | 'CASH_ITEM' | 'ALL_SALES';
+export type MainNavModule = 'CASH_FLOW' | 'URGENT_CALL' | 'CASH_ITEM' | 'ALL_SALES' | 'GOC_LIBRA';
 
 interface SidebarProps {
   activeModule: MainNavModule;
@@ -92,6 +92,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: <History className="w-5 h-5" />,
       badge: `${summary.rocEggsSold + summary.roEggsSold + cashSummary.historicalSales > 0 ? 'All' : ''}`,
       badgeColor: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+    },
+    {
+      id: 'GOC_LIBRA',
+      label: '✨ GOC & Libra Promo (14.25k)',
+      subLabel: 'Silvervine, ไข่ Libra & ของแถมโปร',
+      icon: <Sparkles className="w-5 h-5 text-violet-400" />,
+      badge: '14.25k',
+      badgeColor: 'bg-violet-500/15 text-violet-300 border-violet-500/30',
     },
   ];
 

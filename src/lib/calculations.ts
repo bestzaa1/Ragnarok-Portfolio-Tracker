@@ -10,8 +10,16 @@ import {
   CashPortfolioConfig,
   CashPortfolioSummary,
   CombinedCashFlowSummary,
+  GocLibraItem,
+  GocLibraSale,
+  GocLibraConfig,
+  GocLibraSummary,
 } from '@/types';
-import { DEFAULT_CONFIG, DEFAULT_CASH_PORTFOLIO_CONFIG } from './constants';
+import {
+  DEFAULT_CONFIG,
+  DEFAULT_CASH_PORTFOLIO_CONFIG,
+  DEFAULT_GOC_LIBRA_CONFIG,
+} from './constants';
 
 export function calculateDashboardSummary(
   eggSales: EggSale[],
@@ -215,13 +223,100 @@ export function calculateCashPortfolioSummary(
 }
 
 // ===============================================
+// Calculations for GOC & Libra Promo (14.25k)
+// ===============================================
+
+export function calculateGocLibraSummary(
+  items: GocLibraItem[],
+  sales: GocLibraSale[],
+  config: GocLibraConfig = DEFAULT_GOC_LIBRA_CONFIG
+): GocLibraSummary {
+  const totalCost = config.initialCapital; // 14,250 THB
+  const totalRevenue = sales.reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+  const clearedRevenue = sales
+    .filter((s) => s.status === 'Clear')
+    .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+  const pendingRevenue = sales
+    .filter((s) => s.status === 'Pending')
+    .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+
+  const netProfit = totalRevenue - totalCost;
+  const clearedNetProfit = clearedRevenue - totalCost;
+  const roiPercentage = totalCost > 0 ? (netProfit / totalCost) * 100 : 0;
+  const breakevenPercent = totalCost > 0 ? (clearedRevenue / totalCost) * 100 : 100;
+  const totalBreakevenPercent = totalCost > 0 ? (totalRevenue / totalCost) * 100 : 100;
+  const remainingToBreakeven = Math.max(0, totalCost - clearedRevenue);
+  const isBreakeven = clearedRevenue >= totalCost;
+
+  // Silvervine metrics
+  const svItems = items.filter((i) => i.category === 'SILVERVINE');
+  const silvervineTotal = svItems.reduce((sum, i) => sum + (Number(i.totalQty) || 0), 0);
+  const silvervineRemaining = svItems.reduce((sum, i) => sum + (Number(i.stockQty) || 0), 0);
+  const silvervineSold = svItems.reduce((sum, i) => sum + (Number(i.soldQty) || 0), 0);
+  const silvervineRevenue = sales
+    .filter((s) => s.category === 'SILVERVINE')
+    .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+
+  // Libra Scroll metrics
+  const libraItems = items.filter((i) => i.category === 'LIBRA_SCROLL');
+  const libraTotal = libraItems.reduce((sum, i) => sum + (Number(i.totalQty) || 0), 0);
+  const libraRemaining = libraItems.reduce((sum, i) => sum + (Number(i.stockQty) || 0), 0);
+  const libraSold = libraItems.reduce((sum, i) => sum + (Number(i.soldQty) || 0), 0);
+  const libraRevenue = sales
+    .filter((s) => s.category === 'LIBRA_SCROLL')
+    .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+
+  // Goodies metrics
+  const goodieItems = items.filter((i) => i.category === 'PROMO_GOODIE');
+  const goodiesTotalCount = goodieItems.reduce((sum, i) => sum + (Number(i.totalQty) || 0), 0);
+  const goodiesRemainingCount = goodieItems.reduce((sum, i) => sum + (Number(i.stockQty) || 0), 0);
+  const goodiesRevenue = sales
+    .filter((s) => s.category === 'PROMO_GOODIE')
+    .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+
+  const estimatedRemainingStockValue = items.reduce(
+    (sum, i) => sum + (Number(i.stockQty) || 0) * (Number(i.targetPricePerUnit) || 0),
+    0
+  );
+
+  return {
+    totalCost,
+    totalPoints: config.totalPoints,
+    costPerPoint: config.costPerPoint,
+    totalRevenue,
+    clearedRevenue,
+    pendingRevenue,
+    netProfit,
+    clearedNetProfit,
+    roiPercentage,
+    breakevenPercent,
+    totalBreakevenPercent,
+    remainingToBreakeven,
+    isBreakeven,
+    silvervineTotal,
+    silvervineSold,
+    silvervineRemaining,
+    silvervineRevenue,
+    libraTotal,
+    libraSold,
+    libraRemaining,
+    libraRevenue,
+    goodiesTotalCount,
+    goodiesRemainingCount,
+    goodiesRevenue,
+    estimatedRemainingStockValue,
+  };
+}
+
+// ===============================================
 // Combined Cross-Project Cash Flow Calculations
 // ===============================================
 
 export function calculateCombinedCashFlowSummary(
   urgentCallSummary: DashboardSummary,
   cashSummary: CashPortfolioSummary,
-  cashConfig: CashPortfolioConfig = DEFAULT_CASH_PORTFOLIO_CONFIG
+  cashConfig: CashPortfolioConfig = DEFAULT_CASH_PORTFOLIO_CONFIG,
+  gocLibraSummary?: GocLibraSummary
 ): CombinedCashFlowSummary {
   const loanToUrgentCall = cashConfig.loanToUrgentCall; // 45,000 THB
 
@@ -236,24 +331,40 @@ export function calculateCombinedCashFlowSummary(
   const urgentCallRemainingToRepay = Math.max(0, loanToUrgentCall - urgentCallClearedRevenue);
   const urgentCallIsRepaid = urgentCallClearedRevenue >= loanToUrgentCall;
 
+  // GOC & Libra Promo (14,250 THB loan from Central Cash Pool)
+  const loanToGocLibra = gocLibraSummary ? gocLibraSummary.totalCost : 14250;
+  const gocLibraTotalRevenue = gocLibraSummary ? gocLibraSummary.totalRevenue : 0;
+  const gocLibraClearedRevenue = gocLibraSummary ? gocLibraSummary.clearedRevenue : 0;
+  const gocLibraPendingRevenue = gocLibraSummary ? gocLibraSummary.pendingRevenue : 0;
+  const gocLibraRepaidToPool = Math.min(gocLibraClearedRevenue, loanToGocLibra);
+  const gocLibraRepaidPercent =
+    loanToGocLibra > 0 ? (gocLibraClearedRevenue / loanToGocLibra) * 100 : 100;
+  const gocLibraRemainingToRepay = Math.max(0, loanToGocLibra - gocLibraClearedRevenue);
+  const gocLibraIsRepaid = gocLibraClearedRevenue >= loanToGocLibra;
+
   // Physical Cash In Hand (เงินสดจริงในบัญชี):
-  // (Cash Item cleared sales - 45,000 loan) + Urgent Call cleared sales
+  // (Cash Item cleared sales - 45,000 loan - 14,250 GOC Libra loan) + Urgent Call cleared sales + GOC Libra cleared sales
   const physicalCashInHand =
-    cashSummary.clearedCashSales - loanToUrgentCall + urgentCallClearedRevenue;
+    cashSummary.clearedCashSales -
+    loanToUrgentCall -
+    loanToGocLibra +
+    urgentCallClearedRevenue +
+    gocLibraClearedRevenue;
 
   const totalPendingReceivables =
-    cashSummary.pendingCashSales + urgentCallPendingRevenue;
+    cashSummary.pendingCashSales + urgentCallPendingRevenue + gocLibraPendingRevenue;
 
-  // Net combined invested = 54,000 (since the 45k was internal transfer)
+  // Net combined invested = 54,000 (since both 45k and 14.25k are internal transfers from the central pool)
   const totalCombinedInvested = cashSummary.initialInvestment;
 
-  // Total combined profit across both projects:
-  // (Total cash inflow from both) - 54,000 initial cash invested
-  const totalInflows = cashSummary.clearedCashSales + urgentCallClearedRevenue - loanToUrgentCall;
+  // Total combined profit across all 3 projects:
   const totalCombinedNetProfit =
-    cashSummary.clearedCashSales - cashSummary.initialInvestment + (urgentCallClearedRevenue - loanToUrgentCall);
+    cashSummary.clearedCashSales -
+    cashSummary.initialInvestment +
+    (urgentCallClearedRevenue - loanToUrgentCall) +
+    (gocLibraClearedRevenue - loanToGocLibra);
 
-  // Combined assets: Physical cash + Cash Points + Cash Items Stock + Estimated remaining Urgent Call items
+  // Combined assets: Physical cash + Cash Points + Cash Items Stock + Estimated remaining Urgent Call items + GOC Libra remaining stock
   const urgentCallRemainingFigureValue = urgentCallSummary.figureRemaining * 4500;
   const urgentCallRemainingKeycapValue = urgentCallSummary.keycapRemainingBoxes * 3200;
   const urgentCallRemainingEggValue =
@@ -261,11 +372,14 @@ export function calculateCombinedCashFlowSummary(
   const urgentCallTotalStockValue =
     urgentCallRemainingFigureValue + urgentCallRemainingKeycapValue + urgentCallRemainingEggValue;
 
+  const gocLibraStockValue = gocLibraSummary ? gocLibraSummary.estimatedRemainingStockValue : 0;
+
   const totalCombinedAssets =
     physicalCashInHand +
     cashSummary.pointValueThb +
     cashSummary.totalInventoryValue +
-    urgentCallTotalStockValue;
+    urgentCallTotalStockValue +
+    gocLibraStockValue;
 
   return {
     loanToUrgentCall,
@@ -276,6 +390,14 @@ export function calculateCombinedCashFlowSummary(
     urgentCallRepaidPercent,
     urgentCallRemainingToRepay,
     urgentCallIsRepaid,
+    loanToGocLibra,
+    gocLibraTotalRevenue,
+    gocLibraClearedRevenue,
+    gocLibraPendingRevenue,
+    gocLibraRepaidToPool,
+    gocLibraRepaidPercent,
+    gocLibraRemainingToRepay,
+    gocLibraIsRepaid,
     cashItemClearedSales: cashSummary.clearedCashSales,
     cashItemPendingSales: cashSummary.pendingCashSales,
     physicalCashInHand,
@@ -285,3 +407,4 @@ export function calculateCombinedCashFlowSummary(
     totalCombinedAssets,
   };
 }
+

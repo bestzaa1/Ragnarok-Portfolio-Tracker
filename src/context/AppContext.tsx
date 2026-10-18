@@ -14,20 +14,28 @@ import {
   CashPortfolioConfig,
   CashPortfolioSummary,
   CombinedCashFlowSummary,
+  GocLibraItem,
+  GocLibraSale,
+  GocLibraConfig,
+  GocLibraSummary,
 } from '@/types';
 import {
   DEFAULT_CONFIG,
   DEFAULT_CASH_PORTFOLIO_CONFIG,
+  DEFAULT_GOC_LIBRA_CONFIG,
   SAMPLE_EGG_SALES,
   SAMPLE_PHYSICAL_SALES,
   SAMPLE_CASH_ITEMS,
   SAMPLE_CASH_SALES,
+  SAMPLE_GOC_LIBRA_ITEMS,
+  SAMPLE_GOC_LIBRA_SALES,
 } from '@/lib/constants';
 import initialRealData from '@/lib/initialRealData.json';
 import {
   calculateDashboardSummary,
   calculateCashPortfolioSummary,
   calculateCombinedCashFlowSummary,
+  calculateGocLibraSummary,
 } from '@/lib/calculations';
 import {
   getStoredSupabaseConfig,
@@ -52,6 +60,12 @@ interface AppContextType {
   cashSales: CashSale[];
   cashConfig: CashPortfolioConfig;
   cashSummary: CashPortfolioSummary;
+
+  // GOC & Libra Promo (14.25k) State (promo_oct_14k)
+  gocLibraItems: GocLibraItem[];
+  gocLibraSales: GocLibraSale[];
+  gocLibraConfig: GocLibraConfig;
+  gocLibraSummary: GocLibraSummary;
 
   // Combined Inter-Project Cash Flow
   combinedCashFlow: CombinedCashFlowSummary;
@@ -90,6 +104,17 @@ interface AppContextType {
   deleteCashSale: (id: string) => Promise<boolean>;
   toggleCashSaleStatus: (id: string) => Promise<void>;
 
+  // GOC & Libra Promo (14.25k) Actions
+  addGocLibraItem: (item: Omit<GocLibraItem, 'id' | 'createdAt' | 'projectId'>) => Promise<boolean>;
+  updateGocLibraItem: (id: string, item: Partial<GocLibraItem>) => Promise<boolean>;
+  deleteGocLibraItem: (id: string) => Promise<boolean>;
+  adjustGocLibraItemStock: (id: string, delta: number) => Promise<boolean>;
+  addGocLibraSale: (sale: Omit<GocLibraSale, 'id' | 'createdAt' | 'projectId'>) => Promise<boolean>;
+  updateGocLibraSale: (id: string, sale: Partial<GocLibraSale>) => Promise<boolean>;
+  deleteGocLibraSale: (id: string) => Promise<boolean>;
+  toggleGocLibraSaleStatus: (id: string) => Promise<void>;
+  resetGocLibraDefault: () => Promise<void>;
+
   // Settings & Utilities
   syncFromPromotionSheet: () => Promise<void>;
   syncFromSalesLedgerPdf: () => Promise<void>;
@@ -117,6 +142,10 @@ const LOCAL_STORAGE_CASH_ITEMS = 'roc_cash_items_v1';
 const LOCAL_STORAGE_CASH_SALES = 'roc_cash_sales_v1';
 const LOCAL_STORAGE_CASH_CONFIG = 'roc_cash_config_v1';
 
+const LOCAL_STORAGE_GOC_LIBRA_ITEMS = 'roc_goc_libra_items_v1';
+const LOCAL_STORAGE_GOC_LIBRA_SALES = 'roc_goc_libra_sales_v1';
+const LOCAL_STORAGE_GOC_LIBRA_CONFIG = 'roc_goc_libra_config_v1';
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Urgent Call States
   const [eggSales, setEggSales] = useState<EggSale[]>([]);
@@ -128,6 +157,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [cashItems, setCashItems] = useState<CashItem[]>([]);
   const [cashSales, setCashSales] = useState<CashSale[]>([]);
   const [cashConfig, setCashConfig] = useState<CashPortfolioConfig>(DEFAULT_CASH_PORTFOLIO_CONFIG);
+
+  // GOC & Libra Promo (14.25k) States
+  const [gocLibraItems, setGocLibraItems] = useState<GocLibraItem[]>(SAMPLE_GOC_LIBRA_ITEMS);
+  const [gocLibraSales, setGocLibraSales] = useState<GocLibraSale[]>(SAMPLE_GOC_LIBRA_SALES);
+  const [gocLibraConfig, setGocLibraConfig] = useState<GocLibraConfig>(DEFAULT_GOC_LIBRA_CONFIG);
 
   // Supabase & App State - เปิดใช้งานถาวรเป็นค่าเริ่มต้น (Default to Enabled)
   const [supabaseConfig, setSupabaseConfigState] = useState<SupabaseConfig>(() => {
@@ -279,6 +313,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } else {
         setCashSales(SAMPLE_CASH_SALES);
         localStorage.setItem(LOCAL_STORAGE_CASH_SALES, JSON.stringify(SAMPLE_CASH_SALES));
+      }
+
+      // GOC & Libra Promo (14.25k) Items, Sales, Config
+      const savedGocItems = localStorage.getItem(LOCAL_STORAGE_GOC_LIBRA_ITEMS);
+      if (savedGocItems) {
+        try {
+          const parsed = JSON.parse(savedGocItems);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setGocLibraItems(parsed);
+          } else {
+            setGocLibraItems(SAMPLE_GOC_LIBRA_ITEMS);
+            localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_ITEMS, JSON.stringify(SAMPLE_GOC_LIBRA_ITEMS));
+          }
+        } catch {
+          setGocLibraItems(SAMPLE_GOC_LIBRA_ITEMS);
+          localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_ITEMS, JSON.stringify(SAMPLE_GOC_LIBRA_ITEMS));
+        }
+      } else {
+        setGocLibraItems(SAMPLE_GOC_LIBRA_ITEMS);
+        localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_ITEMS, JSON.stringify(SAMPLE_GOC_LIBRA_ITEMS));
+      }
+
+      const savedGocSales = localStorage.getItem(LOCAL_STORAGE_GOC_LIBRA_SALES);
+      if (savedGocSales) {
+        try {
+          const parsed = JSON.parse(savedGocSales);
+          if (Array.isArray(parsed)) {
+            setGocLibraSales(parsed);
+          } else {
+            setGocLibraSales(SAMPLE_GOC_LIBRA_SALES);
+            localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_SALES, JSON.stringify(SAMPLE_GOC_LIBRA_SALES));
+          }
+        } catch {
+          setGocLibraSales(SAMPLE_GOC_LIBRA_SALES);
+          localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_SALES, JSON.stringify(SAMPLE_GOC_LIBRA_SALES));
+        }
+      } else {
+        setGocLibraSales(SAMPLE_GOC_LIBRA_SALES);
+        localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_SALES, JSON.stringify(SAMPLE_GOC_LIBRA_SALES));
+      }
+
+      const savedGocConfig = localStorage.getItem(LOCAL_STORAGE_GOC_LIBRA_CONFIG);
+      if (savedGocConfig) {
+        try {
+          setGocLibraConfig(JSON.parse(savedGocConfig));
+        } catch {
+          setGocLibraConfig(DEFAULT_GOC_LIBRA_CONFIG);
+        }
+      } else {
+        setGocLibraConfig(DEFAULT_GOC_LIBRA_CONFIG);
       }
     } catch (e) {
       console.error('Failed reading initial state from storage', e);
@@ -528,6 +612,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               if (cashConf?.value) {
                 setCashConfig(cashConf.value);
                 localStorage.setItem(LOCAL_STORAGE_CASH_CONFIG, JSON.stringify(cashConf.value));
+              }
+              const gocState = remoteConfigs.find((c: any) => c.key === 'promo_oct_14k_state');
+              if (gocState?.value) {
+                if (Array.isArray(gocState.value.items) && gocState.value.items.length > 0) {
+                  setGocLibraItems(gocState.value.items);
+                  localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_ITEMS, JSON.stringify(gocState.value.items));
+                }
+                if (Array.isArray(gocState.value.sales)) {
+                  setGocLibraSales(gocState.value.sales);
+                  localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_SALES, JSON.stringify(gocState.value.sales));
+                }
+                if (gocState.value.config) {
+                  setGocLibraConfig(gocState.value.config);
+                  localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_CONFIG, JSON.stringify(gocState.value.config));
+                }
+              } else {
+                // Auto-seed initial promo_oct_14k_state to app_configs so Realtime is ready immediately
+                const localGocItems = localStorage.getItem(LOCAL_STORAGE_GOC_LIBRA_ITEMS);
+                const initItems: GocLibraItem[] = localGocItems ? JSON.parse(localGocItems) : SAMPLE_GOC_LIBRA_ITEMS;
+                const localGocSales = localStorage.getItem(LOCAL_STORAGE_GOC_LIBRA_SALES);
+                const initSales: GocLibraSale[] = localGocSales ? JSON.parse(localGocSales) : SAMPLE_GOC_LIBRA_SALES;
+                await supabase.from('app_configs').upsert({
+                  key: 'promo_oct_14k_state',
+                  value: {
+                    items: initItems,
+                    sales: initSales,
+                    config: DEFAULT_GOC_LIBRA_CONFIG,
+                  },
+                  updated_at: new Date().toISOString(),
+                });
               }
             }
           }
@@ -782,7 +896,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         }
       })
-      // 5. app_configs realtime
+      // 5. app_configs realtime (including promo_oct_14k_state)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'app_configs' }, (payload) => {
         if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
           const r = payload.new as any;
@@ -792,6 +906,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           } else if (r?.key === 'urgent_call_config' && r?.value) {
             setConfig(r.value);
             localStorage.setItem(LOCAL_STORAGE_CONFIG, JSON.stringify(r.value));
+          } else if (r?.key === 'promo_oct_14k_state' && r?.value) {
+            if (Array.isArray(r.value.items)) {
+              setGocLibraItems(r.value.items);
+              localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_ITEMS, JSON.stringify(r.value.items));
+            }
+            if (Array.isArray(r.value.sales)) {
+              setGocLibraSales(r.value.sales);
+              localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_SALES, JSON.stringify(r.value.sales));
+            }
+            if (r.value.config) {
+              setGocLibraConfig(r.value.config);
+              localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_CONFIG, JSON.stringify(r.value.config));
+            }
           }
         }
       })
@@ -818,6 +945,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (e.key === LOCAL_STORAGE_CASH_ITEMS && e.newValue) setCashItems(JSON.parse(e.newValue));
       if (e.key === LOCAL_STORAGE_CASH_SALES && e.newValue) setCashSales(JSON.parse(e.newValue));
       if (e.key === LOCAL_STORAGE_CASH_CONFIG && e.newValue) setCashConfig(JSON.parse(e.newValue));
+      if (e.key === LOCAL_STORAGE_GOC_LIBRA_ITEMS && e.newValue) setGocLibraItems(JSON.parse(e.newValue));
+      if (e.key === LOCAL_STORAGE_GOC_LIBRA_SALES && e.newValue) setGocLibraSales(JSON.parse(e.newValue));
+      if (e.key === LOCAL_STORAGE_GOC_LIBRA_CONFIG && e.newValue) setGocLibraConfig(JSON.parse(e.newValue));
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -832,9 +962,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return calculateCashPortfolioSummary(cashItems, cashSales, cashConfig);
   }, [cashItems, cashSales, cashConfig]);
 
+  const gocLibraSummary = useMemo(() => {
+    return calculateGocLibraSummary(gocLibraItems, gocLibraSales, gocLibraConfig);
+  }, [gocLibraItems, gocLibraSales, gocLibraConfig]);
+
   const combinedCashFlow = useMemo(() => {
-    return calculateCombinedCashFlowSummary(summary, cashSummary, cashConfig);
-  }, [summary, cashSummary, cashConfig]);
+    return calculateCombinedCashFlowSummary(summary, cashSummary, cashConfig, gocLibraSummary);
+  }, [summary, cashSummary, cashConfig, gocLibraSummary]);
 
   // ----------------------------------------
   // Actions: Urgent Call Egg Sales
@@ -1421,6 +1555,205 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     [cashSales, updateCashSale]
   );
 
+  // ---------------------------------------------------
+  // Actions: GOC & Libra Promo (14.25k) (promo_oct_14k)
+  // ---------------------------------------------------
+  const syncGocLibraStateToSupabase = useCallback(
+    async (nextItems: GocLibraItem[], nextSales: GocLibraSale[], nextConfig: GocLibraConfig) => {
+      const supabase = getSupabaseClient();
+      if (!supabase) return;
+      try {
+        await supabase.from('app_configs').upsert({
+          key: 'promo_oct_14k_state',
+          value: {
+            items: nextItems,
+            sales: nextSales,
+            config: nextConfig,
+          },
+          updated_at: new Date().toISOString(),
+        });
+      } catch (e) {
+        console.error('Supabase promo_oct_14k_state sync error:', e);
+      }
+    },
+    []
+  );
+
+  const addGocLibraItem = useCallback(
+    async (newItemData: Omit<GocLibraItem, 'id' | 'createdAt' | 'projectId'>): Promise<boolean> => {
+      const newItem: GocLibraItem = {
+        ...newItemData,
+        id: `goc-item-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        projectId: 'promo_oct_14k',
+        createdAt: new Date().toISOString(),
+      };
+      const nextItems = [...gocLibraItems, newItem];
+      setGocLibraItems(nextItems);
+      localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_ITEMS, JSON.stringify(nextItems));
+      await syncGocLibraStateToSupabase(nextItems, gocLibraSales, gocLibraConfig);
+      return true;
+    },
+    [gocLibraItems, gocLibraSales, gocLibraConfig, syncGocLibraStateToSupabase]
+  );
+
+  const updateGocLibraItem = useCallback(
+    async (id: string, partial: Partial<GocLibraItem>): Promise<boolean> => {
+      const nextItems = gocLibraItems.map((item) => (item.id === id ? { ...item, ...partial } : item));
+      setGocLibraItems(nextItems);
+      localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_ITEMS, JSON.stringify(nextItems));
+      await syncGocLibraStateToSupabase(nextItems, gocLibraSales, gocLibraConfig);
+      return true;
+    },
+    [gocLibraItems, gocLibraSales, gocLibraConfig, syncGocLibraStateToSupabase]
+  );
+
+  const deleteGocLibraItem = useCallback(
+    async (id: string): Promise<boolean> => {
+      const nextItems = gocLibraItems.filter((item) => item.id !== id);
+      setGocLibraItems(nextItems);
+      localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_ITEMS, JSON.stringify(nextItems));
+      await syncGocLibraStateToSupabase(nextItems, gocLibraSales, gocLibraConfig);
+      return true;
+    },
+    [gocLibraItems, gocLibraSales, gocLibraConfig, syncGocLibraStateToSupabase]
+  );
+
+  const adjustGocLibraItemStock = useCallback(
+    async (id: string, delta: number): Promise<boolean> => {
+      const target = gocLibraItems.find((i) => i.id === id);
+      if (!target) return false;
+      const nextStock = Math.max(0, target.stockQty + delta);
+      const nextItems = gocLibraItems.map((i) =>
+        i.id === id ? { ...i, stockQty: nextStock } : i
+      );
+      setGocLibraItems(nextItems);
+      localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_ITEMS, JSON.stringify(nextItems));
+      await syncGocLibraStateToSupabase(nextItems, gocLibraSales, gocLibraConfig);
+      return true;
+    },
+    [gocLibraItems, gocLibraSales, gocLibraConfig, syncGocLibraStateToSupabase]
+  );
+
+  const addGocLibraSale = useCallback(
+    async (newSaleData: Omit<GocLibraSale, 'id' | 'createdAt' | 'projectId'>): Promise<boolean> => {
+      const newSale: GocLibraSale = {
+        ...newSaleData,
+        id: `goc-sale-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        projectId: 'promo_oct_14k',
+        createdAt: new Date().toISOString(),
+      };
+
+      const nextSales = [newSale, ...gocLibraSales];
+      const nextItems = gocLibraItems.map((item) => {
+        if (item.id === newSale.itemId) {
+          const nextStock = Math.max(0, item.stockQty - newSale.quantity);
+          const nextSold = (Number(item.soldQty) || 0) + newSale.quantity;
+          return {
+            ...item,
+            stockQty: nextStock,
+            soldQty: nextSold,
+          };
+        }
+        return item;
+      });
+
+      setGocLibraSales(nextSales);
+      setGocLibraItems(nextItems);
+      localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_SALES, JSON.stringify(nextSales));
+      localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_ITEMS, JSON.stringify(nextItems));
+
+      await syncGocLibraStateToSupabase(nextItems, nextSales, gocLibraConfig);
+
+      const newGocSummary = calculateGocLibraSummary(nextItems, nextSales, gocLibraConfig);
+      if (newGocSummary.breakevenPercent >= 100 && gocLibraSummary.breakevenPercent < 100) {
+        triggerConfettiEffect();
+      }
+      return true;
+    },
+    [gocLibraSales, gocLibraItems, gocLibraConfig, gocLibraSummary.breakevenPercent, syncGocLibraStateToSupabase, triggerConfettiEffect]
+  );
+
+  const updateGocLibraSale = useCallback(
+    async (id: string, partial: Partial<GocLibraSale>): Promise<boolean> => {
+      const target = gocLibraSales.find((s) => s.id === id);
+      const nextSales = gocLibraSales.map((s) => (s.id === id ? { ...s, ...partial } : s));
+      let nextItems = gocLibraItems;
+
+      // If quantity changed, adjust stock & soldQty on linked item
+      if (target && partial.quantity !== undefined && partial.quantity !== target.quantity) {
+        const diff = partial.quantity - target.quantity;
+        nextItems = gocLibraItems.map((item) => {
+          if (item.id === target.itemId) {
+            return {
+              ...item,
+              stockQty: Math.max(0, item.stockQty - diff),
+              soldQty: Math.max(0, (Number(item.soldQty) || 0) + diff),
+            };
+          }
+          return item;
+        });
+        setGocLibraItems(nextItems);
+        localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_ITEMS, JSON.stringify(nextItems));
+      }
+
+      setGocLibraSales(nextSales);
+      localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_SALES, JSON.stringify(nextSales));
+      await syncGocLibraStateToSupabase(nextItems, nextSales, gocLibraConfig);
+      return true;
+    },
+    [gocLibraSales, gocLibraItems, gocLibraConfig, syncGocLibraStateToSupabase]
+  );
+
+  const deleteGocLibraSale = useCallback(
+    async (id: string): Promise<boolean> => {
+      const target = gocLibraSales.find((s) => s.id === id);
+      const nextSales = gocLibraSales.filter((s) => s.id !== id);
+      let nextItems = gocLibraItems;
+
+      // Restore stock and soldQty when deleting a sale
+      if (target) {
+        nextItems = gocLibraItems.map((item) => {
+          if (item.id === target.itemId) {
+            return {
+              ...item,
+              stockQty: item.stockQty + target.quantity,
+              soldQty: Math.max(0, (Number(item.soldQty) || 0) - target.quantity),
+            };
+          }
+          return item;
+        });
+        setGocLibraItems(nextItems);
+        localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_ITEMS, JSON.stringify(nextItems));
+      }
+
+      setGocLibraSales(nextSales);
+      localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_SALES, JSON.stringify(nextSales));
+      await syncGocLibraStateToSupabase(nextItems, nextSales, gocLibraConfig);
+      return true;
+    },
+    [gocLibraSales, gocLibraItems, gocLibraConfig, syncGocLibraStateToSupabase]
+  );
+
+  const toggleGocLibraSaleStatus = useCallback(
+    async (id: string) => {
+      const target = gocLibraSales.find((s) => s.id === id);
+      if (!target) return;
+      const nextStatus: PaymentStatus = target.status === 'Clear' ? 'Pending' : 'Clear';
+      await updateGocLibraSale(id, { status: nextStatus });
+    },
+    [gocLibraSales, updateGocLibraSale]
+  );
+
+  const resetGocLibraDefault = useCallback(async () => {
+    setGocLibraItems(SAMPLE_GOC_LIBRA_ITEMS);
+    setGocLibraSales(SAMPLE_GOC_LIBRA_SALES);
+    setGocLibraConfig(DEFAULT_GOC_LIBRA_CONFIG);
+    localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_ITEMS, JSON.stringify(SAMPLE_GOC_LIBRA_ITEMS));
+    localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_SALES, JSON.stringify(SAMPLE_GOC_LIBRA_SALES));
+    localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_CONFIG, JSON.stringify(DEFAULT_GOC_LIBRA_CONFIG));
+    await syncGocLibraStateToSupabase(SAMPLE_GOC_LIBRA_ITEMS, SAMPLE_GOC_LIBRA_SALES, DEFAULT_GOC_LIBRA_CONFIG);
+  }, [syncGocLibraStateToSupabase]);
+
   // ----------------------------------------
   // Settings & Utilities
   // ----------------------------------------
@@ -1556,17 +1889,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await supabase.from('app_configs').upsert([
         { key: 'urgent_call_config', value: config, updated_at: new Date().toISOString() },
         { key: 'cash_portfolio_config', value: cashConfig, updated_at: new Date().toISOString() },
+        {
+          key: 'promo_oct_14k_state',
+          value: { items: gocLibraItems, sales: gocLibraSales, config: gocLibraConfig },
+          updated_at: new Date().toISOString(),
+        },
       ]);
 
       return {
         success: true,
-        message: `อัปโหลดขึ้น Supabase สำเร็จเรียบร้อย! (ยอดไข่ ${eggSales.length}, สต็อก ${cashItems.length}, ยอดขาย ${cashSales.length} รายการ)`,
+        message: `อัปโหลดขึ้น Supabase สำเร็จเรียบร้อย! (ยอดไข่ ${eggSales.length}, สต็อก ${cashItems.length}, ยอดขาย ${cashSales.length}, GOC&Libra ${gocLibraSales.length} รายการ)`,
       };
     } catch (err: any) {
       console.error('Upload local to Supabase error:', err);
       return { success: false, message: `อัปโหลดไม่สำเร็จ: ${err.message || err}` };
     }
-  }, [eggSales, physicalSales, cashItems, cashSales, config, cashConfig, supabaseConfig.enabled]);
+  }, [eggSales, physicalSales, cashItems, cashSales, config, cashConfig, gocLibraItems, gocLibraSales, gocLibraConfig, supabaseConfig.enabled]);
 
   const syncFromPromotionSheet = useCallback(async () => {
     setCashItems(SAMPLE_CASH_ITEMS);
@@ -1643,6 +1981,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setPhysicalSales(seedPhys as PhysicalSale[]);
       setCashItems(seedItems as CashItem[]);
       setCashSales(seedSales as CashSale[]);
+      setGocLibraItems(SAMPLE_GOC_LIBRA_ITEMS);
+      setGocLibraSales(SAMPLE_GOC_LIBRA_SALES);
+      setGocLibraConfig(DEFAULT_GOC_LIBRA_CONFIG);
 
       // 2. บันทึกลงใน LocalStorage สำหรับ Offline Fallback
       localStorage.setItem(LOCAL_STORAGE_CONFIG, JSON.stringify(seedConfig));
@@ -1651,6 +1992,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(LOCAL_STORAGE_PHYSICAL_SALES, JSON.stringify(seedPhys));
       localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(seedItems));
       localStorage.setItem(LOCAL_STORAGE_CASH_SALES, JSON.stringify(seedSales));
+      localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_ITEMS, JSON.stringify(SAMPLE_GOC_LIBRA_ITEMS));
+      localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_SALES, JSON.stringify(SAMPLE_GOC_LIBRA_SALES));
+      localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_CONFIG, JSON.stringify(DEFAULT_GOC_LIBRA_CONFIG));
 
       // 3. ซิงก์เข้า Supabase Database (ถ้าเชื่อมต่ออยู่)
       const supabase = getSupabaseClient();
@@ -1724,10 +2068,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         );
       }
 
-      // 3.5 บันทึกคอนฟิกต้นทุน Urgent Call (45k) และพอร์ตเติมเงิน (54k)
+      // 3.5 บันทึกคอนฟิกต้นทุน Urgent Call (45k), พอร์ตเติมเงิน (54k), และ GOC & Libra Promo (14.25k)
       await supabase.from('app_configs').upsert([
         { key: 'urgent_call_config', value: seedConfig, updated_at: new Date().toISOString() },
         { key: 'cash_portfolio_config', value: seedCashConfig, updated_at: new Date().toISOString() },
+        {
+          key: 'promo_oct_14k_state',
+          value: {
+            items: SAMPLE_GOC_LIBRA_ITEMS,
+            sales: SAMPLE_GOC_LIBRA_SALES,
+            config: DEFAULT_GOC_LIBRA_CONFIG,
+          },
+          updated_at: new Date().toISOString(),
+        },
       ]);
 
       return {
@@ -1751,9 +2104,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setEggSales([]);
     setPhysicalSales([]);
     setCashSales([]);
+    setGocLibraSales([]);
     localStorage.setItem(LOCAL_STORAGE_EGG_SALES, JSON.stringify([]));
     localStorage.setItem(LOCAL_STORAGE_PHYSICAL_SALES, JSON.stringify([]));
     localStorage.setItem(LOCAL_STORAGE_CASH_SALES, JSON.stringify([]));
+    localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_SALES, JSON.stringify([]));
 
     const supabase = getSupabaseClient();
     if (supabase) {
@@ -1761,11 +2116,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await supabase.from('egg_sales').delete().neq('id', '___none___');
         await supabase.from('physical_sales').delete().neq('id', '___none___');
         await supabase.from('cash_sales').delete().neq('id', '___none___');
+        await syncGocLibraStateToSupabase(gocLibraItems, [], gocLibraConfig);
       } catch (e) {
         console.error('Supabase clear error:', e);
       }
     }
-  }, []);
+  }, [gocLibraItems, gocLibraConfig, syncGocLibraStateToSupabase]);
 
   const importFromJson = useCallback(async (jsonData: any): Promise<{ success: boolean; message: string }> => {
     try {
@@ -1792,6 +2148,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (jsonData.cashConfig) {
         setCashConfig(jsonData.cashConfig);
         localStorage.setItem(LOCAL_STORAGE_CASH_CONFIG, JSON.stringify(jsonData.cashConfig));
+      }
+      if (jsonData.gocLibraItems && Array.isArray(jsonData.gocLibraItems)) {
+        setGocLibraItems(jsonData.gocLibraItems);
+        localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_ITEMS, JSON.stringify(jsonData.gocLibraItems));
+      }
+      if (jsonData.gocLibraSales && Array.isArray(jsonData.gocLibraSales)) {
+        setGocLibraSales(jsonData.gocLibraSales);
+        localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_SALES, JSON.stringify(jsonData.gocLibraSales));
+      }
+      if (jsonData.gocLibraConfig) {
+        setGocLibraConfig(jsonData.gocLibraConfig);
+        localStorage.setItem(LOCAL_STORAGE_GOC_LIBRA_CONFIG, JSON.stringify(jsonData.gocLibraConfig));
       }
 
       // ซิงก์ข้อมูลที่กู้คืนกลับขึ้น Supabase ทันทีหากเชื่อมต่ออยู่
@@ -1881,14 +2249,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         }
 
-        if (jsonData.config || jsonData.cashConfig) {
-          const configUpdates = [];
-          if (jsonData.config) {
-            configUpdates.push({ key: 'urgent_call_config', value: jsonData.config, updated_at: new Date().toISOString() });
-          }
-          if (jsonData.cashConfig) {
-            configUpdates.push({ key: 'cash_portfolio_config', value: jsonData.cashConfig, updated_at: new Date().toISOString() });
-          }
+        const configUpdates = [];
+        if (jsonData.config) {
+          configUpdates.push({ key: 'urgent_call_config', value: jsonData.config, updated_at: new Date().toISOString() });
+        }
+        if (jsonData.cashConfig) {
+          configUpdates.push({ key: 'cash_portfolio_config', value: jsonData.cashConfig, updated_at: new Date().toISOString() });
+        }
+        if (jsonData.gocLibraItems || jsonData.gocLibraSales || jsonData.gocLibraConfig) {
+          configUpdates.push({
+            key: 'promo_oct_14k_state',
+            value: {
+              items: jsonData.gocLibraItems || gocLibraItems,
+              sales: jsonData.gocLibraSales || gocLibraSales,
+              config: jsonData.gocLibraConfig || gocLibraConfig,
+            },
+            updated_at: new Date().toISOString(),
+          });
+        }
+        if (configUpdates.length > 0) {
           await supabase.from('app_configs').upsert(configUpdates);
         }
       }
@@ -1904,7 +2283,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         message: `เกิดข้อผิดพลาดในการนำเข้าข้อมูล: ${err.message || err}`,
       };
     }
-  }, [supabaseConfig.enabled]);
+  }, [supabaseConfig.enabled, gocLibraItems, gocLibraSales, gocLibraConfig]);
 
   const triggerExportExcel = useCallback(() => {
     const rocSales = eggSales.filter((s) => s.server === 'ROC');
@@ -1929,9 +2308,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       cashSales,
       config,
       cashConfig,
+      gocLibraItems,
+      gocLibraSales,
+      gocLibraConfig,
       exportedAt: new Date().toISOString(),
     });
-  }, [eggSales, physicalSales, cashItems, cashSales, config, cashConfig]);
+  }, [eggSales, physicalSales, cashItems, cashSales, config, cashConfig, gocLibraItems, gocLibraSales, gocLibraConfig]);
 
   return (
     <AppContext.Provider
@@ -1949,6 +2331,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         cashSales,
         cashConfig,
         cashSummary,
+
+        // GOC & Libra Promo (14.25k)
+        gocLibraItems,
+        gocLibraSales,
+        gocLibraConfig,
+        gocLibraSummary,
+
+        // Combined Cash Flow
         combinedCashFlow,
 
         // Supabase & App
@@ -1981,6 +2371,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateCashSale,
         deleteCashSale,
         toggleCashSaleStatus,
+
+        // GOC & Libra Promo Actions
+        addGocLibraItem,
+        updateGocLibraItem,
+        deleteGocLibraItem,
+        adjustGocLibraItemStock,
+        addGocLibraSale,
+        updateGocLibraSale,
+        deleteGocLibraSale,
+        toggleGocLibraSaleStatus,
+        resetGocLibraDefault,
 
         // Settings & Utilities
         syncFromPromotionSheet,

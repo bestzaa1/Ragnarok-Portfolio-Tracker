@@ -216,6 +216,9 @@ export function exportToJsonBackup(data: {
   cashSales?: CashSale[];
   config?: any;
   cashConfig?: any;
+  gocLibraItems?: any[];
+  gocLibraSales?: any[];
+  gocLibraConfig?: any;
   exportedAt: string;
 }) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });

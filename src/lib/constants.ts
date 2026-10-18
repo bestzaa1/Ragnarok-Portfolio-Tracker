@@ -5,6 +5,9 @@ import {
   CashPortfolioConfig,
   CashItem,
   CashSale,
+  GocLibraConfig,
+  GocLibraItem,
+  GocLibraSale,
 } from '@/types';
 import { PDF_CASH_SALES } from './pdfSalesData';
 
@@ -418,4 +421,151 @@ export const SAMPLE_CASH_ITEMS: CashItem[] = [
 // Cash Sales - Exact 60 transactions from user's "3. ตารางบันทึกยอดขาย (Sales Ledger)" PDF
 // Total sum = 51,570.10 THB
 export const SAMPLE_CASH_SALES: CashSale[] = PDF_CASH_SALES;
+
+// ==============================================================
+// Project: ✨ GOC & Libra Promo (14.25k) - Oct 18, 2026 (promo_oct_14k)
+// ==============================================================
+
+export const DEFAULT_GOC_LIBRA_CONFIG: GocLibraConfig = {
+  projectId: 'promo_oct_14k',
+  initialCapital: 14250, // ยืมเงินสดจากกองกลาง 14,250 THB
+  totalPoints: 150000, // 150,000 GOC Pay Points
+  costPerPoint: 0.095, // เรทต้นทุน ~0.095 THB / Point
+  silvervinePointsUsed: 105000, // 105 กล่อง = 105,000 Points (~9,975 THB)
+  libraPointsUsed: 45000, // 100 ฟอง = 45,000 Points (~4,275 THB)
+};
+
+export const SAMPLE_GOC_LIBRA_ITEMS: GocLibraItem[] = [
+  {
+    id: 'goc-sv-1',
+    projectId: 'promo_oct_14k',
+    name: 'Silvervine (กล่องซิลเวอร์วาย)',
+    category: 'SILVERVINE',
+    server: 'Baphomet / RO',
+    totalQty: 105,
+    soldQty: 0,
+    stockQty: 105,
+    pointsUsed: 105000,
+    avgCostPerUnit: 95.0, // 105,000 pts * 0.095 = 9,975 THB (95 THB/box pure point cost, or ~135.71 THB/box if 14,250/105)
+    targetPricePerUnit: 135.71, // ต้นทุนเฉลี่ยต่อกล่องตามสัดส่วนทุนรวม ~135.71 THB / ราคาเป้าหมายประเมิน
+    unitLabel: 'กล่อง',
+    note: 'ใช้ 105,000 Points | ต้นทุนเฉลี่ย ~135.71 บ./กล่อง (คิดเทียบทุนรวม) หรือ 95 บ./กล่อง (คิดตามพอยท์)',
+    createdAt: '2026-10-18T10:00:00.000Z',
+  },
+  {
+    id: 'goc-libra-1',
+    projectId: 'promo_oct_14k',
+    name: 'Libra Scroll (ไข่ Libra)',
+    category: 'LIBRA_SCROLL',
+    server: 'Baphomet / RO',
+    totalQty: 100,
+    soldQty: 0,
+    stockQty: 100,
+    pointsUsed: 45000,
+    avgCostPerUnit: 42.75, // 45,000 pts * 0.095 = 4,275 THB / 100 = 42.75 THB/ฟอง
+    targetPricePerUnit: 55.0,
+    unitLabel: 'ฟอง',
+    note: 'ใช้ 45,000 Points | ต้นทุนเฉลี่ย ~42.75 บ./ฟอง',
+    createdAt: '2026-10-18T10:00:00.000Z',
+  },
+  {
+    id: 'goc-goodie-1',
+    projectId: 'promo_oct_14k',
+    name: 'Calendar 2026 + Item Code (RO & ROC)',
+    category: 'PROMO_GOODIE',
+    server: 'RO & ROC',
+    totalQty: 1,
+    soldQty: 0,
+    stockQty: 1,
+    pointsUsed: 0,
+    avgCostPerUnit: 0,
+    targetPricePerUnit: 1500,
+    unitLabel: 'เซ็ต',
+    note: 'ปฏิทินปี 2026 พร้อมโค้ดไอเทม (ใช้งานได้ทั้ง RO และ ROC)',
+    createdAt: '2026-10-18T10:05:00.000Z',
+  },
+  {
+    id: 'goc-goodie-2',
+    projectId: 'promo_oct_14k',
+    name: 'Ancient Guarantee Enchant Ticket',
+    category: 'PROMO_GOODIE',
+    server: 'RO',
+    totalQty: 1,
+    soldQty: 0,
+    stockQty: 1,
+    pointsUsed: 0,
+    avgCostPerUnit: 0,
+    targetPricePerUnit: 2500,
+    unitLabel: 'ใบ',
+    note: 'ตั๋วการันตีออปชั่น Ancient (ของแถมโปรโมชั่น)',
+    createdAt: '2026-10-18T10:05:00.000Z',
+  },
+  {
+    id: 'goc-goodie-3',
+    projectId: 'promo_oct_14k',
+    name: 'Pin Badge Collection (เข็มกลัดที่ระลึก)',
+    category: 'PROMO_GOODIE',
+    server: 'Physical Goodie',
+    totalQty: 1,
+    soldQty: 0,
+    stockQty: 1,
+    pointsUsed: 0,
+    avgCostPerUnit: 0,
+    targetPricePerUnit: 800,
+    unitLabel: 'เซ็ต',
+    note: 'ชุดเข็มกลัดที่ระลึก Physical Goodies',
+    createdAt: '2026-10-18T10:05:00.000Z',
+  },
+  {
+    id: 'goc-goodie-4',
+    projectId: 'promo_oct_14k',
+    name: 'Armor 9 Up Box v.1',
+    category: 'PROMO_GOODIE',
+    server: 'RO',
+    totalQty: 1,
+    soldQty: 0,
+    stockQty: 1,
+    pointsUsed: 0,
+    avgCostPerUnit: 0,
+    targetPricePerUnit: 1200,
+    unitLabel: 'กล่อง',
+    note: 'Tier Spending Reward (ใบการันตีเกราะ +9)',
+    createdAt: '2026-10-18T10:05:00.000Z',
+  },
+  {
+    id: 'goc-goodie-5',
+    projectId: 'promo_oct_14k',
+    name: 'Weapon 9 Up Box v.1',
+    category: 'PROMO_GOODIE',
+    server: 'RO',
+    totalQty: 1,
+    soldQty: 0,
+    stockQty: 1,
+    pointsUsed: 0,
+    avgCostPerUnit: 0,
+    targetPricePerUnit: 900,
+    unitLabel: 'กล่อง',
+    note: 'Tier Spending Reward (ใบการันตีอาวุธ +9)',
+    createdAt: '2026-10-18T10:05:00.000Z',
+  },
+  {
+    id: 'goc-goodie-6',
+    projectId: 'promo_oct_14k',
+    name: 'Festa Code & Potion Tier Rewards',
+    category: 'PROMO_GOODIE',
+    server: 'RO / ROC',
+    totalQty: 1,
+    soldQty: 0,
+    stockQty: 1,
+    pointsUsed: 0,
+    avgCostPerUnit: 0,
+    targetPricePerUnit: 500,
+    unitLabel: 'เซ็ต',
+    note: 'โค้ด Festa และไอเทมยา/ของแถมสะสมยอด',
+    createdAt: '2026-10-18T10:05:00.000Z',
+  },
+];
+
+export const SAMPLE_GOC_LIBRA_SALES: GocLibraSale[] = [];
+
 

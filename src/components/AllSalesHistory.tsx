@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
-import { EggSale, PhysicalSale, PaymentStatus } from '@/types';
+import { EggSale, PhysicalSale, GocLibraSale, PaymentStatus } from '@/types';
 import {
   History,
   Search,
@@ -16,11 +16,12 @@ import {
   Layers,
   User,
   Filter,
+  Sparkles,
 } from 'lucide-react';
 
 interface UnifiedSaleItem {
   id: string;
-  sourceType: 'EGG_ROC' | 'EGG_RO' | 'PHYSICAL_FIGURE' | 'PHYSICAL_KEYCAP_BOX' | 'PHYSICAL_KEYCAP_PIECE';
+  sourceType: 'EGG_ROC' | 'EGG_RO' | 'PHYSICAL_FIGURE' | 'PHYSICAL_KEYCAP_BOX' | 'PHYSICAL_KEYCAP_PIECE' | 'GOC_LIBRA';
   title: string;
   subTitle: string;
   customerName: string;
@@ -34,6 +35,7 @@ interface UnifiedSaleItem {
   note?: string;
   originalEgg?: EggSale;
   originalPhys?: PhysicalSale;
+  originalGoc?: GocLibraSale;
 }
 
 interface AllSalesHistoryProps {
@@ -49,14 +51,17 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
     isAdmin,
     eggSales,
     physicalSales,
+    gocLibraSales,
     deleteEggSale,
     deletePhysicalSale,
+    deleteGocLibraSale,
     toggleEggSaleStatus,
     togglePhysicalSaleStatus,
+    toggleGocLibraSaleStatus,
   } = useApp();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'ALL' | 'ROC' | 'RO' | 'FIGURE' | 'KEYCAP'>('ALL');
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'ROC' | 'RO' | 'FIGURE' | 'KEYCAP' | 'GOC_LIBRA'>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | PaymentStatus>('ALL');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
 
@@ -118,8 +123,28 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
       });
     });
 
+    // GOC & Libra Promo Sales
+    gocLibraSales.forEach((g) => {
+      list.push({
+        id: g.id,
+        sourceType: 'GOC_LIBRA',
+        title: 'GOC & Libra Promo',
+        subTitle: g.itemName,
+        customerName: g.customerName,
+        quantityText: `${g.quantity.toLocaleString()} ${g.category === 'SILVERVINE' ? 'กล่อง' : g.category === 'LIBRA_SCROLL' ? 'ฟอง' : 'ชิ้น'}`,
+        quantity: g.quantity,
+        pricePerUnit: g.unitPrice,
+        totalAmount: g.totalAmount,
+        status: g.status,
+        date: g.date,
+        channelOrServer: g.server,
+        note: g.note,
+        originalGoc: g,
+      });
+    });
+
     return list;
-  }, [eggSales, physicalSales]);
+  }, [eggSales, physicalSales, gocLibraSales]);
 
   // Filter & sort
   const filteredList = useMemo(() => {
@@ -133,6 +158,7 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
             item.sourceType === 'PHYSICAL_KEYCAP_BOX' ||
             item.sourceType === 'PHYSICAL_KEYCAP_PIECE'
           );
+        if (typeFilter === 'GOC_LIBRA') return item.sourceType === 'GOC_LIBRA';
         return true;
       })
       .filter((item) => (statusFilter === 'ALL' ? true : item.status === statusFilter))
@@ -199,6 +225,7 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
             <option value="RO">🥚 ไข่สุ่ม RO (Class 3)</option>
             <option value="FIGURE">🧸 Alberta Figure</option>
             <option value="KEYCAP">⌨️ MVP Keycap</option>
+            <option value="GOC_LIBRA">✨ GOC & Libra Promo</option>
           </select>
 
           <select
@@ -264,6 +291,10 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
                           <Package className="w-3 h-3" /> Figure
                         </span>
+                      ) : item.sourceType === 'GOC_LIBRA' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-violet-500/15 text-violet-300 border border-violet-500/30">
+                          <Sparkles className="w-3 h-3" /> GOC & Libra
+                        </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/10 text-purple-300 border border-purple-500/30">
                           <Layers className="w-3 h-3" /> Keycap
@@ -306,6 +337,7 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                           onClick={() => {
                             if (item.originalEgg) toggleEggSaleStatus(item.originalEgg.id);
                             if (item.originalPhys) togglePhysicalSaleStatus(item.originalPhys.id);
+                            if (item.originalGoc) toggleGocLibraSaleStatus(item.originalGoc.id);
                           }}
                           className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                             item.status === 'Clear'
@@ -369,21 +401,24 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                     {isAdmin && (
                       <td className="py-3 px-4 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => {
-                              if (item.originalEgg) onEditEgg(item.originalEgg);
-                              if (item.originalPhys) onEditPhysical(item.originalPhys);
-                            }}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-amber-300 hover:bg-white/[0.06] transition-colors cursor-pointer"
-                            title="แก้ไข"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
+                          {(item.originalEgg || item.originalPhys) && (
+                            <button
+                              onClick={() => {
+                                if (item.originalEgg) onEditEgg(item.originalEgg);
+                                if (item.originalPhys) onEditPhysical(item.originalPhys);
+                              }}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-amber-300 hover:bg-white/[0.06] transition-colors cursor-pointer"
+                              title="แก้ไข"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <button
                             onClick={() => {
                               if (confirm(`ต้องการลบรายการของ "${item.customerName}" หรือไม่?`)) {
                                 if (item.originalEgg) deleteEggSale(item.originalEgg.id);
                                 if (item.originalPhys) deletePhysicalSale(item.originalPhys.id);
+                                if (item.originalGoc) deleteGocLibraSale(item.originalGoc.id);
                               }
                             }}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-white/[0.06] transition-colors cursor-pointer"

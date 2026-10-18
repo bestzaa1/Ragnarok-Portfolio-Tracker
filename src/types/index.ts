@@ -160,12 +160,22 @@ export interface CombinedCashFlowSummary {
   urgentCallRepaidPercent: number;
   urgentCallRemainingToRepay: number;
   urgentCallIsRepaid: boolean;
+
+  // New Project: GOC & Libra Promo (14.25k) - Oct 18, 2026
+  loanToGocLibra: number; // 14,250 THB
+  gocLibraTotalRevenue: number;
+  gocLibraClearedRevenue: number;
+  gocLibraPendingRevenue: number;
+  gocLibraRepaidToPool: number;
+  gocLibraRepaidPercent: number;
+  gocLibraRemainingToRepay: number;
+  gocLibraIsRepaid: boolean;
   
   cashItemClearedSales: number;
   cashItemPendingSales: number;
   
   // Real Net Cash in Bank Account:
-  // (Cash item cleared sales - 45,000 loan) + Urgent call cleared sales
+  // (Cash item cleared sales - 45,000 loan - 14,250 loan) + Urgent call cleared sales + GOC Libra cleared sales
   physicalCashInHand: number;
   
   totalPendingReceivables: number;
@@ -173,3 +183,85 @@ export interface CombinedCashFlowSummary {
   totalCombinedNetProfit: number;
   totalCombinedAssets: number;
 }
+
+// ====================================================
+// Types for GOC & Libra Promo (14.25k) - promo_oct_14k
+// ====================================================
+
+export type GocLibraCategory = 'SILVERVINE' | 'LIBRA_SCROLL' | 'PROMO_GOODIE';
+
+export interface GocLibraItem {
+  id: string;
+  projectId: 'promo_oct_14k';
+  name: string;
+  category: GocLibraCategory;
+  server: string; // e.g., 'RO / ROC', 'Baphomet', 'Real Item'
+  totalQty: number;
+  soldQty: number;
+  stockQty: number;
+  pointsUsed?: number; // e.g., 105,000 for Silvervine, 45,000 for Libra
+  avgCostPerUnit: number; // e.g., 135.71 for Silvervine, 42.75 for Libra, 0 for freebies
+  targetPricePerUnit: number; // Forecast price per unit (THB)
+  unitLabel: string; // 'กล่อง', 'ฟอง', 'เซ็ต', 'ใบ', 'ชิ้น'
+  note?: string;
+  createdAt: string;
+}
+
+export interface GocLibraSale {
+  id: string;
+  projectId: 'promo_oct_14k';
+  itemId: string;
+  itemName: string;
+  category: GocLibraCategory;
+  customerName: string;
+  quantity: number;
+  unitPrice: number;
+  totalAmount: number;
+  server: string;
+  status: PaymentStatus;
+  date: string;
+  note?: string;
+  createdAt: string;
+}
+
+export interface GocLibraConfig {
+  projectId: 'promo_oct_14k';
+  initialCapital: number; // 14,250 THB
+  totalPoints: number; // 150,000 Points
+  costPerPoint: number; // 0.095 THB / Point
+  silvervinePointsUsed: number; // 105,000 Points
+  libraPointsUsed: number; // 45,000 Points
+}
+
+export interface GocLibraSummary {
+  totalCost: number; // 14,250 THB
+  totalPoints: number; // 150,000
+  costPerPoint: number; // 0.095
+  totalRevenue: number;
+  clearedRevenue: number;
+  pendingRevenue: number;
+  netProfit: number; // totalRevenue - 14,250
+  clearedNetProfit: number; // clearedRevenue - 14,250
+  roiPercentage: number;
+  breakevenPercent: number; // (clearedRevenue / 14250) * 100
+  totalBreakevenPercent: number; // (totalRevenue / 14250) * 100
+  remainingToBreakeven: number;
+  isBreakeven: boolean;
+
+  // Inventory metrics
+  silvervineTotal: number;
+  silvervineSold: number;
+  silvervineRemaining: number;
+  silvervineRevenue: number;
+
+  libraTotal: number;
+  libraSold: number;
+  libraRemaining: number;
+  libraRevenue: number;
+
+  goodiesTotalCount: number;
+  goodiesRemainingCount: number;
+  goodiesRevenue: number;
+  estimatedRemainingStockValue: number;
+}
+

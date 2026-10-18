@@ -83,6 +83,11 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           category: 'Audit & Transactions',
           title: 'ประวัติการขายทั้งหมด (Sales History Ledger)',
         };
+      case 'GOC_LIBRA':
+        return {
+          category: 'Promo Investment (18 Oct 2026)',
+          title: '✨ GOC & Libra Promo (14.25k) — Silvervine, ไข่ Libra & ของแถมโปร',
+        };
       default:
         return {
           category: 'Dashboard',

@@ -108,7 +108,7 @@ export const BreakEvenWidget: React.FC = () => {
         {/* 3 Metric Pills at bottom */}
         <div className="grid grid-cols-3 gap-2.5 pt-4 border-t border-white/[0.06] text-xs font-mono">
           <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04]">
-            <div className="text-[10px] text-slate-500">เงินยืมซื้อของ</div>
+            <div className="text-[10px] text-slate-500">เงินยืม Urgent Call</div>
             <div className="font-bold text-slate-200 mt-0.5">
               ฿{combinedCashFlow.loanToUrgentCall.toLocaleString()}
             </div>
@@ -124,6 +124,25 @@ export const BreakEvenWidget: React.FC = () => {
             <div className="font-bold text-amber-300 mt-0.5">
               ฿{combinedCashFlow.urgentCallRemainingToRepay.toLocaleString()}
             </div>
+          </div>
+        </div>
+
+        {/* Second Inter-project Loan: GOC & Libra Promo (14.25k) */}
+        <div className="mt-4 pt-4 border-t border-white/[0.06]">
+          <div className="flex items-center justify-between text-xs mb-1.5">
+            <span className="font-bold text-violet-300 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+              เงินยืมกองกลางรอบ 2: GOC & Libra Promo (18 ต.ค. 2026)
+            </span>
+            <span className="font-mono font-bold text-slate-300">
+              <span className="text-emerald-400">฿{combinedCashFlow.gocLibraClearedRevenue.toLocaleString()}</span> / ฿{combinedCashFlow.loanToGocLibra.toLocaleString()} ({combinedCashFlow.gocLibraRepaidPercent.toFixed(1)}%)
+            </span>
+          </div>
+          <div className="w-full h-2 rounded-full bg-white/[0.05] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-violet-500 via-cyan-400 to-emerald-400 transition-all duration-500"
+              style={{ width: `${Math.min(100, Math.max(0, combinedCashFlow.gocLibraRepaidPercent))}%` }}
+            />
           </div>
         </div>
       </div>

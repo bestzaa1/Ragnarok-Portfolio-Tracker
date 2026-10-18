@@ -45,8 +45,8 @@ export const CombinedCashFlowTracker: React.FC = () => {
               เงินสดจริงคงเหลือในบัญชีธนาคาร (Net Physical Cash in Hand)
             </h3>
             <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
-              คำนวณจากยอดขายสดที่ได้รับโอนเข้าบัญชีจริงแล้วของทั้ง 2 โปรเจกต์
-              หักลบด้วยเงินสด 45,000 THB ที่จ่ายซื้อของ Urgent Call ไป
+              คำนวณจากยอดขายสดที่ได้รับโอนเข้าบัญชีจริงแล้วของทุกโปรเจกต์
+              หักลบด้วยเงินยืมกองกลางไปลงทุน Urgent Call (-฿45,000) และ GOC & Libra Promo (-฿14,250)
             </p>
           </div>
 
@@ -54,10 +54,14 @@ export const CombinedCashFlowTracker: React.FC = () => {
             <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">
               ยอดเงินสดคงเหลือปัจจุบัน
             </div>
-            <div className="text-3xl sm:text-5xl font-black text-emerald-400 tracking-tight flex items-baseline lg:justify-end gap-1.5 font-mono">
+            <div
+              className={`text-3xl sm:text-5xl font-black tracking-tight flex items-baseline lg:justify-end gap-1.5 font-mono ${
+                combinedCashFlow.physicalCashInHand >= 0 ? 'text-emerald-400' : 'text-amber-400'
+              }`}
+            >
               <span>
-                ฿
-                {combinedCashFlow.physicalCashInHand.toLocaleString(undefined, {
+                {combinedCashFlow.physicalCashInHand < 0 ? '-' : ''}฿
+                {Math.abs(combinedCashFlow.physicalCashInHand).toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}
@@ -68,43 +72,69 @@ export const CombinedCashFlowTracker: React.FC = () => {
         </div>
 
         {/* Breakdown Equation Explanation */}
-        <div className="mt-6 pt-6 border-t border-white/[0.08] grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-          <div className="p-4 rounded-2xl bg-black/40 border border-white/[0.06] hover:border-emerald-500/30 transition-all">
+        <div className="mt-6 pt-6 border-t border-white/[0.08] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 text-xs">
+          <div className="p-3.5 rounded-2xl bg-black/40 border border-white/[0.06] hover:border-emerald-500/30 transition-all">
             <div className="text-slate-400 flex items-center justify-between">
               <span>1. ยอดขายสด Cash Item</span>
-              <span className="text-emerald-400 font-bold">บวกเข้า (+)</span>
+              <span className="text-emerald-400 font-bold">+</span>
             </div>
-            <div className="text-xl font-black text-white mt-1 font-mono">
+            <div className="text-lg font-black text-white mt-1 font-mono">
               +฿{combinedCashFlow.cashItemClearedSales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5">
-              (ยอดเดิม 51,570.10 + ขายใหม่)
+              พอร์ตเติมเงิน 54k เดิม
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-black/40 border border-white/[0.06] hover:border-rose-500/30 transition-all">
+          <div className="p-3.5 rounded-2xl bg-black/40 border border-white/[0.06] hover:border-rose-500/30 transition-all">
             <div className="text-slate-400 flex items-center justify-between">
-              <span>2. โอนยืมไปซื้อไข่ Urgent Call</span>
-              <span className="text-rose-400 font-bold">หักออก (-)</span>
+              <span>2. ยืมไป Urgent Call</span>
+              <span className="text-rose-400 font-bold">-</span>
             </div>
-            <div className="text-xl font-black text-rose-400 mt-1 font-mono">
+            <div className="text-lg font-black text-rose-400 mt-1 font-mono">
               -฿{combinedCashFlow.loanToUrgentCall.toLocaleString()}
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5">
-              (Figure 21k + Keycap 24k)
+              Figure 21k + Keycap 24k
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-black/40 border border-white/[0.06] hover:border-emerald-500/30 transition-all">
+          <div className="p-3.5 rounded-2xl bg-black/40 border border-white/[0.06] hover:border-emerald-500/30 transition-all">
             <div className="text-slate-400 flex items-center justify-between">
-              <span>3. ยอดขายสดโปรเจกต์ไข่ที่รับแล้ว</span>
-              <span className="text-emerald-400 font-bold">บวกคืน (+)</span>
+              <span>3. รายรับ Urgent Call</span>
+              <span className="text-emerald-400 font-bold">+</span>
             </div>
-            <div className="text-xl font-black text-white mt-1 font-mono">
+            <div className="text-lg font-black text-emerald-400 mt-1 font-mono">
               +฿{combinedCashFlow.urgentCallClearedRevenue.toLocaleString()}
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5">
-              (ยอดชำระแล้วจากงาน Urgent Call)
+              ยอดขายไข่/Figure ที่ Clear
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-violet-950/20 border border-violet-500/30 hover:border-rose-500/40 transition-all">
+            <div className="text-violet-300 flex items-center justify-between">
+              <span>4. ยืมทุน GOC & Libra</span>
+              <span className="text-rose-400 font-bold">หักออก (-)</span>
+            </div>
+            <div className="text-lg font-black text-rose-400 mt-1 font-mono">
+              [-฿{combinedCashFlow.loanToGocLibra.toLocaleString()}]
+            </div>
+            <div className="text-[11px] text-slate-400 mt-0.5">
+              ยืมทุนไปลงทุนโปรเจกต์ GOC & Libra Promo (18 ต.ค. 2026)
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-violet-950/20 border border-violet-500/30 hover:border-emerald-500/40 transition-all">
+            <div className="text-violet-300 flex items-center justify-between">
+              <span>5. รายรับ GOC & Libra</span>
+              <span className="text-emerald-400 font-bold">บวกคืน (+)</span>
+            </div>
+            <div className="text-lg font-black text-emerald-400 mt-1 font-mono">
+              +฿{combinedCashFlow.gocLibraClearedRevenue.toLocaleString()}
+            </div>
+            <div className="text-[11px] text-slate-400 mt-0.5">
+              ขาย Silvervine, Libra & ของแถม (Clear)
             </div>
           </div>
         </div>

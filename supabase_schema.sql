@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS public.physical_sales (
 -- 3. ตารางสต็อกสินค้า Cash Items & Promotion Freebies (cash_items)
 CREATE TABLE IF NOT EXISTS public.cash_items (
   id TEXT PRIMARY KEY,
+  project_id TEXT DEFAULT 'cash_54k',          -- 'cash_54k' หรือ 'promo_oct_14k'
   name TEXT NOT NULL,                          -- ชื่อสินค้า
   category TEXT NOT NULL,                      -- 'PROMO_FREEBIE' หรือ 'POINT_PURCHASED'
   server TEXT NOT NULL,                        -- 'Baphomet', 'Moonlight', etc.
@@ -53,6 +54,7 @@ CREATE TABLE IF NOT EXISTS public.cash_items (
 -- 4. ตารางบันทึกยอดขายสินค้า Cash Items (cash_sales - Sales Ledger 60 รายการ)
 CREATE TABLE IF NOT EXISTS public.cash_sales (
   id TEXT PRIMARY KEY,
+  project_id TEXT DEFAULT 'cash_54k',       -- 'cash_54k' หรือ 'promo_oct_14k'
   cash_item_id TEXT,                        -- รหัสอ้างอิงสินค้าใน cash_items (ถ้ามี)
   item_name TEXT NOT NULL,                  -- ชื่อสินค้าที่ขาย
   category TEXT NOT NULL,                   -- 'PROMO_FREEBIE', 'POINT_PURCHASED', etc.
@@ -68,9 +70,10 @@ CREATE TABLE IF NOT EXISTS public.cash_sales (
 );
 
 -- 5. ตารางตั้งค่าพอร์ตและเงินลงทุน (app_configs)
+-- เก็บ 'urgent_call_config', 'cash_portfolio_config', และ 'promo_oct_14k_state' (GOC & Libra Promo 14.25k)
 CREATE TABLE IF NOT EXISTS public.app_configs (
-  key TEXT PRIMARY KEY,                     -- 'urgent_call_config' หรือ 'cash_portfolio_config'
-  value JSONB NOT NULL,                     -- ค่าคอนฟิกในรูปแบบ JSON
+  key TEXT PRIMARY KEY,                     -- 'urgent_call_config', 'cash_portfolio_config', 'promo_oct_14k_state'
+  value JSONB NOT NULL,                     -- ค่าคอนฟิกและสถานะโปรเจกต์ในรูปแบบ JSONB (Realtime Synced)
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 

@@ -175,11 +175,13 @@ export function findMatchingCashItem(
   const exactMatch = candidates.find((i) => i.name.trim().toLowerCase() === saleNameLower);
   if (exactMatch) return exactMatch;
 
-  // 3. Normalized match (e.g. "Silver vine" <-> "Silver vine รอขาย", "*75" <-> "*75 รอขาย", "เงินเอม" <-> "เงินเอม รอขาย")
+  // 3. Normalized match (e.g. "Silver vine" <-> "Silver vine รอขาย", "*75" <-> "*75 รอขาย", "เงินเอม" <-> "เงินM (เตา 14 + ค้อน 50)")
   const normalizeItemName = (name: string) =>
     name
       .replace(/\s*รอขาย.*$/i, '')
       .replace(/\s*\(.*\)\s*$/i, '')
+      .replace(/เงินเอม/gi, 'เงินm')
+      .replace(/เงิน\s*m/gi, 'เงินm')
       .trim()
       .toLowerCase();
 

@@ -766,7 +766,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                 <th className="py-3 px-4 font-semibold text-center">สถานะชำระเงิน</th>
                 <th className="py-3 px-4 font-semibold">วันที่ / เวลา</th>
                 <th className="py-3 px-4 font-semibold">หมายเหตุ</th>
-                {isAdmin && <th className="py-3 px-4 font-semibold text-center">จัดการ</th>}
+                {isAdmin && <th className="py-3 px-4 font-semibold text-center">จัดการ (ACTION)</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
@@ -909,19 +909,24 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                         <div className="flex items-center justify-center gap-1.5">
                           <button
                             onClick={() => onOpenEditSale(sale)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-sky-300 hover:bg-white/[0.06] transition-colors cursor-pointer"
-                            title="แก้ไข"
+                            className="p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.08] text-slate-300 hover:text-sky-300 hover:border-sky-500/40 hover:bg-sky-500/10 transition-all cursor-pointer"
+                            title="แก้ไขรายการขาย (Edit)"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => {
-                              if (confirm(`ต้องการลบรายการขายของ "${sale.customerName}" หรือไม่?`)) {
+                              const unitLabel = sale.category === 'CASH_POINT' ? 'pts' : 'ชิ้น';
+                              if (
+                                confirm(
+                                  `ต้องการลบรายการขาย "${sale.itemName}" (${sale.server}) ของลูกค้า "${sale.customerName}" จำนวน ${sale.quantity.toLocaleString()} ${unitLabel} (฿${sale.totalAmount.toLocaleString()}) หรือไม่?\n\n• ระบบจะคืนสต็อกกลับเข้าคลัง (Stock Rollback) +${sale.quantity.toLocaleString()} ${unitLabel} อัตโนมัติ\n• ระบบจะหักยอดเงิน ฿${sale.totalAmount.toLocaleString()} ออกจากยอดขายสะสมทันที`
+                                )
+                              ) {
                                 deleteCashSale(sale.id);
                               }
                             }}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-white/[0.06] transition-colors cursor-pointer"
-                            title="ลบ"
+                            className="p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.08] text-slate-300 hover:text-rose-400 hover:border-rose-500/40 hover:bg-rose-500/10 transition-all cursor-pointer"
+                            title="ลบรายการขาย & คืนสต็อก (Delete & Rollback)"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>

@@ -278,6 +278,7 @@ export default function HomePage() {
                 <AllSalesHistory
                   onEditEgg={handleEditEggSale}
                   onEditPhysical={handleEditPhysicalSale}
+                  onEditCashSale={handleOpenEditCashSale}
                 />
               )}
             </div>
@@ -315,6 +316,7 @@ export default function HomePage() {
               <AllSalesHistory
                 onEditEgg={handleEditEggSale}
                 onEditPhysical={handleEditPhysicalSale}
+                onEditCashSale={handleOpenEditCashSale}
               />
             </div>
           )}

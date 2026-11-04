@@ -36,6 +36,7 @@ import {
   calculateCashPortfolioSummary,
   calculateCombinedCashFlowSummary,
   calculateGocLibraSummary,
+  findMatchingCashItem,
 } from '@/lib/calculations';
 import {
   getStoredSupabaseConfig,
@@ -1349,8 +1350,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // ----------------------------------------
   const addCashSale = useCallback(
     async (newSaleData: Omit<CashSale, 'id' | 'createdAt'>): Promise<boolean> => {
+      // Match item in inventory if not CASH_POINT
+      const matchedItem =
+        newSaleData.category !== 'CASH_POINT'
+          ? findMatchingCashItem(cashItems, newSaleData)
+          : undefined;
+
       const newSale: CashSale = {
         ...newSaleData,
+        cashItemId: newSaleData.cashItemId || matchedItem?.id,
         id: `cs-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
         createdAt: new Date().toISOString(),
       };
@@ -1376,29 +1384,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
           return merged;
         });
-      } else if (newSale.cashItemId) {
-        const item = cashItems.find((i) => i.id === newSale.cashItemId);
-        if (item) {
-          const nextStock = Math.max(0, item.stockQty - newSale.quantity);
-          const nextRemainSale = nextStock * item.targetPricePerUnit;
-          setCashItems((prev) => {
-            const next = prev.map((i) =>
-              i.id === item.id ? { ...i, stockQty: nextStock, remainSale: nextRemainSale } : i
-            );
-            localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(next));
-            return next;
-          });
+      } else if (matchedItem) {
+        const saleQty = Number(newSale.quantity) || 0;
+        const saleAmount = Number(newSale.totalAmount) || 0;
+        const nextStock = Math.max(0, matchedItem.stockQty - saleQty);
+        const nextSold = (Number(matchedItem.soldQty) || 0) + saleQty;
+        const nextTotalSale = (Number(matchedItem.totalSale) || 0) + saleAmount;
+        const nextRemainSale = nextStock * matchedItem.targetPricePerUnit;
 
-          const supabase = getSupabaseClient();
-          if (supabase) {
-            try {
-              await supabase
-                .from('cash_items')
-                .update({ stock_qty: nextStock, remain_sale: nextRemainSale })
-                .eq('id', item.id);
-            } catch (e) {
-              console.error('Supabase stock deduction error:', e);
-            }
+        setCashItems((prev) => {
+          const next = prev.map((i) =>
+            i.id === matchedItem.id
+              ? {
+                  ...i,
+                  stockQty: nextStock,
+                  soldQty: nextSold,
+                  totalSale: nextTotalSale,
+                  remainSale: nextRemainSale,
+                }
+              : i
+          );
+          localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(next));
+          return next;
+        });
+
+        const supabase = getSupabaseClient();
+        if (supabase) {
+          try {
+            await supabase
+              .from('cash_items')
+              .update({
+                stock_qty: nextStock,
+                sold_qty: nextSold,
+                total_sale: nextTotalSale,
+                remain_sale: nextRemainSale,
+              })
+              .eq('id', matchedItem.id);
+          } catch (e) {
+            console.error('Supabase stock deduction error:', e);
           }
         }
       }
@@ -1435,33 +1458,175 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateCashSale = useCallback(
     async (id: string, partial: Partial<CashSale>): Promise<boolean> => {
-      const target = cashSales.find((s) => s.id === id);
-      const updated = cashSales.map((s) => (s.id === id ? { ...s, ...partial } : s));
-      setCashSales(updated);
-      localStorage.setItem(LOCAL_STORAGE_CASH_SALES, JSON.stringify(updated));
+      const oldSale = cashSales.find((s) => s.id === id);
+      if (!oldSale) return false;
 
-      // If CASH_POINT sale quantity changed, adjust remaining points accordingly
-      if (target && target.category === 'CASH_POINT' && partial.quantity !== undefined && partial.quantity !== target.quantity) {
-        const delta = partial.quantity - target.quantity;
+      const mergedSale: CashSale = { ...oldSale, ...partial };
+
+      // Find matching inventory items for oldSale and mergedSale (if not CASH_POINT)
+      const oldItem =
+        oldSale.category !== 'CASH_POINT' ? findMatchingCashItem(cashItems, oldSale) : undefined;
+      const newItem =
+        mergedSale.category !== 'CASH_POINT' ? findMatchingCashItem(cashItems, mergedSale) : undefined;
+
+      if (newItem && !mergedSale.cashItemId) {
+        mergedSale.cashItemId = newItem.id;
+        partial.cashItemId = newItem.id;
+      } else if (mergedSale.category === 'CASH_POINT') {
+        mergedSale.cashItemId = undefined;
+        partial.cashItemId = undefined;
+      }
+
+      // 1. Update sales list in state + localStorage
+      const updatedSales = cashSales.map((s) => (s.id === id ? mergedSale : s));
+      setCashSales(updatedSales);
+      localStorage.setItem(LOCAL_STORAGE_CASH_SALES, JSON.stringify(updatedSales));
+
+      // 2. Adjust Remaining Points if either oldSale or mergedSale is CASH_POINT
+      const oldPointsSold = oldSale.category === 'CASH_POINT' ? Number(oldSale.quantity) || 0 : 0;
+      const newPointsSold = mergedSale.category === 'CASH_POINT' ? Number(mergedSale.quantity) || 0 : 0;
+      const diffPoints = newPointsSold - oldPointsSold;
+
+      if (diffPoints !== 0) {
         setCashConfig((prev) => {
-          const nextPoints = Math.max(0, prev.remainingPoints - delta);
-          const merged = { ...prev, remainingPoints: nextPoints };
-          localStorage.setItem(LOCAL_STORAGE_CASH_CONFIG, JSON.stringify(merged));
+          const nextPoints = Math.max(0, prev.remainingPoints - diffPoints);
+          const mergedConfig = { ...prev, remainingPoints: nextPoints };
+          localStorage.setItem(LOCAL_STORAGE_CASH_CONFIG, JSON.stringify(mergedConfig));
           const supabase = getSupabaseClient();
           if (supabase) {
             supabase
               .from('app_configs')
-              .upsert({ key: 'cash_portfolio_config', value: merged, updated_at: new Date().toISOString() })
+              .upsert({
+                key: 'cash_portfolio_config',
+                value: mergedConfig,
+                updated_at: new Date().toISOString(),
+              })
               .then();
           }
-          return merged;
+          return mergedConfig;
         });
       }
 
+      // 3. Adjust CashItem Inventory Stock (Diff Quantity & Diff Total Amount)
+      const oldQty = Number(oldSale.quantity) || 0;
+      const newQty = Number(mergedSale.quantity) || 0;
+      const oldAmount = Number(oldSale.totalAmount) || 0;
+      const newAmount = Number(mergedSale.totalAmount) || 0;
+
+      if (oldItem && newItem && oldItem.id === newItem.id) {
+        // Same inventory item: apply diffQty & diffAmount
+        const diffQty = newQty - oldQty;
+        const diffAmount = newAmount - oldAmount;
+
+        if (diffQty !== 0 || diffAmount !== 0) {
+          const nextStock = Math.max(0, oldItem.stockQty - diffQty);
+          const nextSold = Math.max(0, (Number(oldItem.soldQty) || 0) + diffQty);
+          const nextTotalSale = Math.max(0, (Number(oldItem.totalSale) || 0) + diffAmount);
+          const nextRemainSale = nextStock * oldItem.targetPricePerUnit;
+
+          setCashItems((prev) => {
+            const next = prev.map((i) =>
+              i.id === oldItem.id
+                ? {
+                    ...i,
+                    stockQty: nextStock,
+                    soldQty: nextSold,
+                    totalSale: nextTotalSale,
+                    remainSale: nextRemainSale,
+                  }
+                : i
+            );
+            localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(next));
+            return next;
+          });
+
+          const supabase = getSupabaseClient();
+          if (supabase) {
+            try {
+              await supabase
+                .from('cash_items')
+                .update({
+                  stock_qty: nextStock,
+                  sold_qty: nextSold,
+                  total_sale: nextTotalSale,
+                  remain_sale: nextRemainSale,
+                })
+                .eq('id', oldItem.id);
+            } catch (e) {
+              console.error('Supabase updateCashSale stock diff error:', e);
+            }
+          }
+        }
+      } else {
+        // Item changed (or switched between item and custom/point)
+        const updatedItemMap = new Map<
+          string,
+          { stockQty: number; soldQty: number; totalSale: number; remainSale: number }
+        >();
+
+        if (oldItem) {
+          const restoredStock = oldItem.stockQty + oldQty;
+          const restoredSold = Math.max(0, (Number(oldItem.soldQty) || 0) - oldQty);
+          const restoredTotalSale = Math.max(0, (Number(oldItem.totalSale) || 0) - oldAmount);
+          const restoredRemainSale = restoredStock * oldItem.targetPricePerUnit;
+          updatedItemMap.set(oldItem.id, {
+            stockQty: restoredStock,
+            soldQty: restoredSold,
+            totalSale: restoredTotalSale,
+            remainSale: restoredRemainSale,
+          });
+        }
+
+        if (newItem) {
+          const deductedStock = Math.max(0, newItem.stockQty - newQty);
+          const deductedSold = (Number(newItem.soldQty) || 0) + newQty;
+          const deductedTotalSale = (Number(newItem.totalSale) || 0) + newAmount;
+          const deductedRemainSale = deductedStock * newItem.targetPricePerUnit;
+          updatedItemMap.set(newItem.id, {
+            stockQty: deductedStock,
+            soldQty: deductedSold,
+            totalSale: deductedTotalSale,
+            remainSale: deductedRemainSale,
+          });
+        }
+
+        if (updatedItemMap.size > 0) {
+          setCashItems((prev) => {
+            const next = prev.map((i) => {
+              const patch = updatedItemMap.get(i.id);
+              return patch ? { ...i, ...patch } : i;
+            });
+            localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(next));
+            return next;
+          });
+
+          const supabase = getSupabaseClient();
+          if (supabase) {
+            for (const [itemId, patch] of Array.from(updatedItemMap.entries())) {
+              try {
+                await supabase
+                  .from('cash_items')
+                  .update({
+                    stock_qty: patch.stockQty,
+                    sold_qty: patch.soldQty,
+                    total_sale: patch.totalSale,
+                    remain_sale: patch.remainSale,
+                  })
+                  .eq('id', itemId);
+              } catch (e) {
+                console.error('Supabase updateCashSale item switch error:', e);
+              }
+            }
+          }
+        }
+      }
+
+      // 4. Update sale row in Supabase
       const supabase = getSupabaseClient();
       if (supabase) {
         try {
           const mapped: any = {};
+          if (partial.cashItemId !== undefined) mapped.cash_item_id = partial.cashItemId || null;
           if (partial.itemName !== undefined) mapped.item_name = partial.itemName;
           if (partial.category !== undefined) mapped.category = partial.category;
           if (partial.customerName !== undefined) mapped.customer_name = partial.customerName;
@@ -1480,7 +1645,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return true;
     },
-    [cashSales]
+    [cashSales, cashItems]
   );
 
   const deleteCashSale = useCallback(
@@ -1490,48 +1655,75 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCashSales(updated);
       localStorage.setItem(LOCAL_STORAGE_CASH_SALES, JSON.stringify(updated));
 
-      // If deleted sale was CASH_POINT, restore points
-      if (target && target.category === 'CASH_POINT') {
-        const restorePoints = Number(target.quantity) || 0;
-        setCashConfig((prev) => {
-          const nextPoints = prev.remainingPoints + restorePoints;
-          const merged = { ...prev, remainingPoints: nextPoints };
-          localStorage.setItem(LOCAL_STORAGE_CASH_CONFIG, JSON.stringify(merged));
-          const supabase = getSupabaseClient();
-          if (supabase) {
-            supabase
-              .from('app_configs')
-              .upsert({ key: 'cash_portfolio_config', value: merged, updated_at: new Date().toISOString() })
-              .then();
-          }
-          return merged;
-        });
-      }
+      if (target) {
+        const qtyToRestore = Number(target.quantity) || 0;
+        const amountToSubtract = Number(target.totalAmount) || 0;
 
-      // If deleted sale was tied to cashItemId, restore item stock
-      if (target && target.cashItemId) {
-        const item = cashItems.find((i) => i.id === target.cashItemId);
-        if (item) {
-          const nextStock = item.stockQty + target.quantity;
-          const nextRemainSale = nextStock * item.targetPricePerUnit;
-          setCashItems((prev) => {
-            const next = prev.map((i) =>
-              i.id === item.id ? { ...i, stockQty: nextStock, remainSale: nextRemainSale } : i
-            );
-            localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(next));
-            return next;
+        // 1. If deleted sale was CASH_POINT, restore points back to remainingPoints
+        if (target.category === 'CASH_POINT') {
+          setCashConfig((prev) => {
+            const nextPoints = prev.remainingPoints + qtyToRestore;
+            const merged = { ...prev, remainingPoints: nextPoints };
+            localStorage.setItem(LOCAL_STORAGE_CASH_CONFIG, JSON.stringify(merged));
+            const supabase = getSupabaseClient();
+            if (supabase) {
+              supabase
+                .from('app_configs')
+                .upsert({
+                  key: 'cash_portfolio_config',
+                  value: merged,
+                  updated_at: new Date().toISOString(),
+                })
+                .then();
+            }
+            return merged;
           });
-          const supabase = getSupabaseClient();
-          if (supabase) {
-            supabase
-              .from('cash_items')
-              .update({ stock_qty: nextStock, remain_sale: nextRemainSale })
-              .eq('id', item.id)
-              .then();
+        } else {
+          // 2. Otherwise match item by cashItemId OR itemName + server and rollback stock!
+          const matchedItem = findMatchingCashItem(cashItems, target);
+          if (matchedItem) {
+            const nextStock = matchedItem.stockQty + qtyToRestore;
+            const nextSold = Math.max(0, (Number(matchedItem.soldQty) || 0) - qtyToRestore);
+            const nextTotalSale = Math.max(0, (Number(matchedItem.totalSale) || 0) - amountToSubtract);
+            const nextRemainSale = nextStock * matchedItem.targetPricePerUnit;
+
+            setCashItems((prev) => {
+              const next = prev.map((i) =>
+                i.id === matchedItem.id
+                  ? {
+                      ...i,
+                      stockQty: nextStock,
+                      soldQty: nextSold,
+                      totalSale: nextTotalSale,
+                      remainSale: nextRemainSale,
+                    }
+                  : i
+              );
+              localStorage.setItem(LOCAL_STORAGE_CASH_ITEMS, JSON.stringify(next));
+              return next;
+            });
+
+            const supabase = getSupabaseClient();
+            if (supabase) {
+              try {
+                await supabase
+                  .from('cash_items')
+                  .update({
+                    stock_qty: nextStock,
+                    sold_qty: nextSold,
+                    total_sale: nextTotalSale,
+                    remain_sale: nextRemainSale,
+                  })
+                  .eq('id', matchedItem.id);
+              } catch (e) {
+                console.error('Supabase deleteCashSale stock rollback error:', e);
+              }
+            }
           }
         }
       }
 
+      // 3. Delete row from Supabase cash_sales
       const supabase = getSupabaseClient();
       if (supabase) {
         try {

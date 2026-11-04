@@ -143,6 +143,57 @@ export function calculateCodeSummaries(
 // Calculations for Cash Items & Point Stock Module
 // ===============================================
 
+/**
+ * Helper to match a CashSale (including legacy 60 PDF sales without cashItemId)
+ * to its corresponding CashItem in inventory by ID, exact name+server, or normalized name+server.
+ */
+export function findMatchingCashItem(
+  cashItems: CashItem[],
+  sale: { cashItemId?: string; itemName: string; server: string }
+): CashItem | undefined {
+  if (!sale) return undefined;
+
+  // 1. Direct ID match
+  if (sale.cashItemId) {
+    const byId = cashItems.find((i) => i.id === sale.cashItemId);
+    if (byId) return byId;
+  }
+
+  const rawName = (sale.itemName || '').trim();
+  if (!rawName) return undefined;
+
+  const saleNameLower = rawName.toLowerCase();
+  const saleServerLower = (sale.server || '').trim().toLowerCase();
+
+  // Filter items on the same server first; fallback to all items if server not matched
+  const sameServerItems = cashItems.filter(
+    (i) => (i.server || '').trim().toLowerCase() === saleServerLower
+  );
+  const candidates = sameServerItems.length > 0 ? sameServerItems : cashItems;
+
+  // 2. Exact case-insensitive name match on same server
+  const exactMatch = candidates.find((i) => i.name.trim().toLowerCase() === saleNameLower);
+  if (exactMatch) return exactMatch;
+
+  // 3. Normalized match (e.g. "Silver vine" <-> "Silver vine รอขาย", "*75" <-> "*75 รอขาย", "เงินเอม" <-> "เงินเอม รอขาย")
+  const normalizeItemName = (name: string) =>
+    name
+      .replace(/\s*รอขาย.*$/i, '')
+      .replace(/\s*\(.*\)\s*$/i, '')
+      .trim()
+      .toLowerCase();
+
+  const normalizedSaleName = normalizeItemName(rawName);
+  if (!normalizedSaleName) return undefined;
+
+  const normalizedMatch = candidates.find(
+    (i) => normalizeItemName(i.name) === normalizedSaleName
+  );
+  if (normalizedMatch) return normalizedMatch;
+
+  return undefined;
+}
+
 export function calculateCashPortfolioSummary(
   cashItems: CashItem[],
   cashSales: CashSale[],

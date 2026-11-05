@@ -474,8 +474,9 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                     </td>
 
                     {/* Actions - Always Visible */}
-                    <td className="py-3 px-4 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-1.5">
+                    <td className="px-3 py-2 text-center whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-2">
+                        {/* ปุ่มแก้ไข */}
                         <button
                           onClick={() => {
                             if (item.originalEgg) onEditEgg(item.originalEgg);
@@ -483,11 +484,12 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                             else if (item.originalCash && onEditCashSale) onEditCashSale(item.originalCash);
                             else if (item.originalGoc) handleOpenEditGoc(item.originalGoc);
                           }}
-                          className="inline-flex items-center justify-center px-2 py-1.5 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-300 hover:text-white hover:bg-sky-500/30 hover:border-sky-400 transition-all cursor-pointer"
-                          title="แก้ไขรายการขาย (Edit)"
+                          className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 text-xs border border-amber-500/20 cursor-pointer"
+                          title="แก้ไขรายการ"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          ✏️ แก้ไข
                         </button>
+                        {/* ปุ่มลบ */}
                         <button
                           onClick={() => {
                             if (confirm('ต้องการยกเลิกรายการขายนี้หรือไม่?')) {
@@ -497,10 +499,10 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                               if (item.originalGoc) deleteGocLibraSale(item.originalGoc.id);
                             }
                           }}
-                          className="inline-flex items-center justify-center px-2 py-1.5 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-400 hover:text-white hover:bg-rose-500/30 hover:border-rose-400 transition-all cursor-pointer"
-                          title="ยกเลิก/ลบรายการขาย (Delete & Rollback)"
+                          className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 text-xs border border-rose-500/20 cursor-pointer"
+                          title="ลบรายการ"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          🗑️ ลบ
                         </button>
                       </div>
                     </td>

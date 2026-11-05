@@ -969,7 +969,7 @@ export default function GocLibraTracker() {
                   <th className="py-3 px-3 text-right">ราคา/หน่วย</th>
                   <th className="py-3 px-3 text-right">ยอดรวมสุทธิ</th>
                   <th className="py-3 px-3 text-center">สถานะ</th>
-                  <th className="py-3 px-3 text-right">จัดการ</th>
+                  <th className="py-3 px-3 text-right">จัดการ (Action)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-xs sm:text-sm">
@@ -1015,13 +1015,12 @@ export default function GocLibraTracker() {
                     </td>
                     <td className="py-3 px-3 text-center">
                       <button
-                        onClick={() => isAdmin && toggleGocLibraSaleStatus(sale.id)}
-                        disabled={!isAdmin}
-                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold transition-all ${
+                        onClick={() => toggleGocLibraSaleStatus(sale.id)}
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold transition-all cursor-pointer hover:opacity-80 ${
                           sale.status === 'Clear'
                             ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
                             : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                        } ${isAdmin ? 'cursor-pointer hover:opacity-80' : 'cursor-default'}`}
+                        }`}
                       >
                         {sale.status === 'Clear' ? (
                           <CheckCircle2 className="h-3 w-3" />
@@ -1032,34 +1031,26 @@ export default function GocLibraTracker() {
                       </button>
                     </td>
                     <td className="py-3 px-3 text-right">
-                      {isAdmin ? (
-                        <div className="inline-flex items-center gap-1.5">
-                          <button
-                            onClick={() => handleOpenEditSale(sale)}
-                            className="rounded-lg border border-slate-700 bg-slate-800/80 p-1.5 text-slate-300 hover:text-white cursor-pointer"
-                            title="แก้ไขรายการขาย"
-                          >
-                            <Edit3 className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (
-                                confirm(
-                                  `ยืนยันการลบรายการขาย "${sale.itemName}" ของคุณ ${sale.customerName} (จำนวน ${sale.quantity} ชิ้นจะถูกคืนเข้าสต็อก)?`
-                                )
-                              ) {
-                                deleteGocLibraSale(sale.id);
-                              }
-                            }}
-                            className="rounded-lg border border-slate-700 bg-slate-800/80 p-1.5 text-slate-400 hover:text-rose-400 cursor-pointer"
-                            title="ลบรายการขายและคืนสต็อก"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-slate-500">—</span>
-                      )}
+                      <div className="inline-flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleOpenEditSale(sale)}
+                          className="rounded-lg bg-sky-500/15 border border-sky-500/30 px-2 py-1.5 text-sky-300 hover:text-white hover:bg-sky-500/30 cursor-pointer"
+                          title="แก้ไขรายการขาย (Edit)"
+                        >
+                          <Edit3 className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm('ต้องการยกเลิกรายการขายนี้หรือไม่?')) {
+                              deleteGocLibraSale(sale.id);
+                            }
+                          }}
+                          className="rounded-lg bg-rose-500/15 border border-rose-500/30 px-2 py-1.5 text-rose-400 hover:text-white hover:bg-rose-500/30 cursor-pointer"
+                          title="ยกเลิก/ลบรายการขาย (Delete & Rollback)"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

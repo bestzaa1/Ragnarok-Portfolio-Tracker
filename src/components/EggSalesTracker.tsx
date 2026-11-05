@@ -349,21 +349,17 @@ export const EggSalesTracker: React.FC<EggSalesTrackerProps> = ({
                 <th className="py-3 px-4 font-semibold text-center">สถานะชำระเงิน</th>
                 <th className="py-3 px-4 font-semibold">วันที่ / เวลา</th>
                 <th className="py-3 px-4 font-semibold">หมายเหตุ</th>
-                {isAdmin && <th className="py-3 px-4 font-semibold text-center">จัดการ</th>}
+                <th className="py-3 px-4 font-semibold text-center">จัดการ (Action)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
               {filteredSales.length === 0 ? (
                 <tr>
-                  <td colSpan={isAdmin ? 9 : 8} className="py-12 text-center text-slate-500">
+                  <td colSpan={9} className="py-12 text-center text-slate-500">
                     <Egg className="w-8 h-8 mx-auto mb-2 text-slate-600 opacity-60" />
                     <p className="text-sm">ไม่พบรายการขายที่ตรงกับเงื่อนไข</p>
                     <p className="text-xs text-slate-600 mt-1">
-                      {isAdmin ? (
-                        <>สามารถกดปุ่ม <strong>"+ บันทึกการขายใหม่"</strong> ด้านบนเพื่อเริ่มบันทึก</>
-                      ) : (
-                        <>ยังไม่มีข้อมูลรายการขาย</>
-                      )}
+                      สามารถกดปุ่ม <strong>"+ บันทึกการขายใหม่"</strong> ด้านบนเพื่อเริ่มบันทึก
                     </p>
                   </td>
                 </tr>
@@ -403,51 +399,29 @@ export const EggSalesTracker: React.FC<EggSalesTrackerProps> = ({
                       ฿{sale.totalAmount.toLocaleString()}
                     </td>
 
-                    {/* Status Badge (Toggle 1-Click for Admin, static for Viewer) */}
+                    {/* Status Badge */}
                     <td className="py-3 px-4 text-center whitespace-nowrap">
-                      {isAdmin ? (
-                        <button
-                          onClick={() => toggleEggSaleStatus(sale.id)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                            sale.status === 'Clear'
-                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 shadow-emerald-glow'
-                              : 'bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25'
-                          }`}
-                          title="คลิกเพื่อสลับสถานะ Clear / Pending ทันที"
-                        >
-                          {sale.status === 'Clear' ? (
-                            <>
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                              <span>Clear</span>
-                            </>
-                          ) : (
-                            <>
-                              <Clock className="w-3 h-3 text-amber-400" />
-                              <span>Pending</span>
-                            </>
-                          )}
-                        </button>
-                      ) : (
-                        <div
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                            sale.status === 'Clear'
-                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-emerald-glow'
-                              : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
-                          }`}
-                        >
-                          {sale.status === 'Clear' ? (
-                            <>
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                              <span>Clear</span>
-                            </>
-                          ) : (
-                            <>
-                              <Clock className="w-3 h-3 text-amber-400" />
-                              <span>Pending</span>
-                            </>
-                          )}
-                        </div>
-                      )}
+                      <button
+                        onClick={() => toggleEggSaleStatus(sale.id)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                          sale.status === 'Clear'
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 shadow-emerald-glow'
+                            : 'bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25'
+                        }`}
+                        title="คลิกเพื่อสลับสถานะ Clear / Pending ทันที"
+                      >
+                        {sale.status === 'Clear' ? (
+                          <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            <span>Clear</span>
+                          </>
+                        ) : (
+                          <>
+                            <Clock className="w-3 h-3 text-amber-400" />
+                            <span>Pending</span>
+                          </>
+                        )}
+                      </button>
                     </td>
 
                     {/* Date */}
@@ -466,31 +440,29 @@ export const EggSalesTracker: React.FC<EggSalesTrackerProps> = ({
                       {sale.note || '-'}
                     </td>
 
-                    {/* Actions - Admin Only */}
-                    {isAdmin && (
-                      <td className="py-3 px-4 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => onEditSale(sale)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-amber-300 hover:bg-white/[0.06] transition-colors cursor-pointer"
-                            title="แก้ไขรายการ"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (confirm(`ต้องการลบรายการขายของ "${sale.customerName}" หรือไม่?`)) {
-                                deleteEggSale(sale.id);
-                              }
-                            }}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-white/[0.06] transition-colors cursor-pointer"
-                            title="ลบรายการ"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    )}
+                    {/* Actions - Always Visible */}
+                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          onClick={() => onEditSale(sale)}
+                          className="inline-flex items-center justify-center px-2 py-1.5 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-300 hover:text-white hover:bg-sky-500/30 transition-all cursor-pointer"
+                          title="แก้ไขรายการขาย (Edit)"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm('ต้องการยกเลิกรายการขายนี้หรือไม่?')) {
+                              deleteEggSale(sale.id);
+                            }
+                          }}
+                          className="inline-flex items-center justify-center px-2 py-1.5 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-400 hover:text-white hover:bg-rose-500/30 transition-all cursor-pointer"
+                          title="ยกเลิก/ลบรายการขาย (Delete & Rollback)"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}

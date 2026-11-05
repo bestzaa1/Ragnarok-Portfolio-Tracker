@@ -356,13 +356,13 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                 <th className="py-3 px-4 font-semibold text-center">สถานะชำระเงิน</th>
                 <th className="py-3 px-4 font-semibold">วันที่ / เวลา</th>
                 <th className="py-3 px-4 font-semibold">หมายเหตุ</th>
-                {isAdmin && <th className="py-3 px-4 font-semibold text-center">จัดการ (ACTION)</th>}
+                <th className="py-3 px-4 font-semibold text-center">จัดการ (Action)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
               {filteredList.length === 0 ? (
                 <tr>
-                  <td colSpan={isAdmin ? 10 : 9} className="py-12 text-center text-slate-500">
+                  <td colSpan={10} className="py-12 text-center text-slate-500">
                     <History className="w-8 h-8 mx-auto mb-2 text-slate-600 opacity-60" />
                     <p className="text-sm">ไม่พบประวัติรายการขาย</p>
                   </td>
@@ -427,56 +427,34 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                       ฿{item.totalAmount.toLocaleString(undefined, { minimumFractionDigits: item.totalAmount % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}
                     </td>
 
-                    {/* Status (Toggle 1-Click for Admin, static for Viewer) */}
+                    {/* Status Button */}
                     <td className="py-3 px-4 text-center whitespace-nowrap">
-                      {isAdmin ? (
-                        <button
-                          onClick={() => {
-                            if (item.originalEgg) toggleEggSaleStatus(item.originalEgg.id);
-                            if (item.originalPhys) togglePhysicalSaleStatus(item.originalPhys.id);
-                            if (item.originalCash) toggleCashSaleStatus(item.originalCash.id);
-                            if (item.originalGoc) toggleGocLibraSaleStatus(item.originalGoc.id);
-                          }}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                            item.status === 'Clear'
-                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 shadow-emerald-glow'
-                              : 'bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25'
-                          }`}
-                          title="คลิกเพื่อสลับสถานะทันที"
-                        >
-                          {item.status === 'Clear' ? (
-                            <>
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                              <span>Clear</span>
-                            </>
-                          ) : (
-                            <>
-                              <Clock className="w-3 h-3 text-amber-400" />
-                              <span>Pending</span>
-                            </>
-                          )}
-                        </button>
-                      ) : (
-                        <div
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                            item.status === 'Clear'
-                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-emerald-glow'
-                              : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
-                          }`}
-                        >
-                          {item.status === 'Clear' ? (
-                            <>
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                              <span>Clear</span>
-                            </>
-                          ) : (
-                            <>
-                              <Clock className="w-3 h-3 text-amber-400" />
-                              <span>Pending</span>
-                            </>
-                          )}
-                        </div>
-                      )}
+                      <button
+                        onClick={() => {
+                          if (item.originalEgg) toggleEggSaleStatus(item.originalEgg.id);
+                          if (item.originalPhys) togglePhysicalSaleStatus(item.originalPhys.id);
+                          if (item.originalCash) toggleCashSaleStatus(item.originalCash.id);
+                          if (item.originalGoc) toggleGocLibraSaleStatus(item.originalGoc.id);
+                        }}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                          item.status === 'Clear'
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 shadow-emerald-glow'
+                            : 'bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25'
+                        }`}
+                        title="คลิกเพื่อสลับสถานะทันที"
+                      >
+                        {item.status === 'Clear' ? (
+                          <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            <span>Clear</span>
+                          </>
+                        ) : (
+                          <>
+                            <Clock className="w-3 h-3 text-amber-400" />
+                            <span>Pending</span>
+                          </>
+                        )}
+                      </button>
                     </td>
 
                     {/* Date */}
@@ -495,43 +473,37 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                       {item.note || '-'}
                     </td>
 
-                    {/* Actions - Admin Only */}
-                    {isAdmin && (
-                      <td className="py-3 px-4 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => {
-                              if (item.originalEgg) onEditEgg(item.originalEgg);
-                              else if (item.originalPhys) onEditPhysical(item.originalPhys);
-                              else if (item.originalCash && onEditCashSale) onEditCashSale(item.originalCash);
-                              else if (item.originalGoc) handleOpenEditGoc(item.originalGoc);
-                            }}
-                            className="p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.08] text-slate-300 hover:text-sky-300 hover:border-sky-500/40 hover:bg-sky-500/10 transition-all cursor-pointer"
-                            title="แก้ไขรายการขาย (Edit)"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (
-                                confirm(
-                                  `ต้องการลบรายการขาย "${item.subTitle}" ของลูกค้า "${item.customerName}" จำนวน ${item.quantityText} (฿${item.totalAmount.toLocaleString()}) หรือไม่?\n\n• ระบบจะคืนสต็อกกลับเข้าคลัง (Stock Rollback) อัตโนมัติ\n• ระบบจะหักยอดเงินออกจากยอดขายสะสมทันที`
-                                )
-                              ) {
-                                if (item.originalEgg) deleteEggSale(item.originalEgg.id);
-                                if (item.originalPhys) deletePhysicalSale(item.originalPhys.id);
-                                if (item.originalCash) deleteCashSale(item.originalCash.id);
-                                if (item.originalGoc) deleteGocLibraSale(item.originalGoc.id);
-                              }
-                            }}
-                            className="p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.08] text-slate-300 hover:text-rose-400 hover:border-rose-500/40 hover:bg-rose-500/10 transition-all cursor-pointer"
-                            title="ลบรายการขาย & คืนสต็อก (Delete & Rollback)"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    )}
+                    {/* Actions - Always Visible */}
+                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          onClick={() => {
+                            if (item.originalEgg) onEditEgg(item.originalEgg);
+                            else if (item.originalPhys) onEditPhysical(item.originalPhys);
+                            else if (item.originalCash && onEditCashSale) onEditCashSale(item.originalCash);
+                            else if (item.originalGoc) handleOpenEditGoc(item.originalGoc);
+                          }}
+                          className="inline-flex items-center justify-center px-2 py-1.5 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-300 hover:text-white hover:bg-sky-500/30 hover:border-sky-400 transition-all cursor-pointer"
+                          title="แก้ไขรายการขาย (Edit)"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm('ต้องการยกเลิกรายการขายนี้หรือไม่?')) {
+                              if (item.originalEgg) deleteEggSale(item.originalEgg.id);
+                              if (item.originalPhys) deletePhysicalSale(item.originalPhys.id);
+                              if (item.originalCash) deleteCashSale(item.originalCash.id);
+                              if (item.originalGoc) deleteGocLibraSale(item.originalGoc.id);
+                            }
+                          }}
+                          className="inline-flex items-center justify-center px-2 py-1.5 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-400 hover:text-white hover:bg-rose-500/30 hover:border-rose-400 transition-all cursor-pointer"
+                          title="ยกเลิก/ลบรายการขาย (Delete & Rollback)"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}

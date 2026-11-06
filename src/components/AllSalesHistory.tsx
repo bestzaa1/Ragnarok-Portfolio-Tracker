@@ -356,7 +356,9 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                 <th className="py-3 px-4 font-semibold text-center">สถานะชำระเงิน</th>
                 <th className="py-3 px-4 font-semibold">วันที่ / เวลา</th>
                 <th className="py-3 px-4 font-semibold">หมายเหตุ</th>
-                <th className="py-3 px-4 font-semibold text-center">จัดการ (Action)</th>
+                <th className="sticky right-0 z-20 bg-[#161a29] px-3 py-3 text-center text-xs font-bold text-amber-300 border-l border-white/[0.08] shadow-[-4px_0_12px_rgba(0,0,0,0.4)]">
+                  จัดการ
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
@@ -473,24 +475,26 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                       {item.note || '-'}
                     </td>
 
-                    {/* Actions - Always Visible */}
-                    <td className="px-3 py-2 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-2">
+                    {/* Actions - Always Visible & Sticky Right */}
+                    <td className="sticky right-0 z-10 bg-[#12151f] px-3 py-2 text-center whitespace-nowrap border-l border-white/[0.08] shadow-[-4px_0_12px_rgba(0,0,0,0.4)]">
+                      <div className="flex items-center justify-center gap-1.5">
                         {/* ปุ่มแก้ไข */}
                         <button
+                          type="button"
                           onClick={() => {
                             if (item.originalEgg) onEditEgg(item.originalEgg);
                             else if (item.originalPhys) onEditPhysical(item.originalPhys);
                             else if (item.originalCash && onEditCashSale) onEditCashSale(item.originalCash);
                             else if (item.originalGoc) handleOpenEditGoc(item.originalGoc);
                           }}
-                          className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 text-xs border border-amber-500/20 cursor-pointer"
+                          className="px-2 py-1 rounded-lg bg-amber-500/15 text-amber-300 hover:bg-amber-500/30 text-xs font-semibold border border-amber-500/30 cursor-pointer transition-all"
                           title="แก้ไขรายการ"
                         >
                           ✏️ แก้ไข
                         </button>
                         {/* ปุ่มลบ */}
                         <button
+                          type="button"
                           onClick={() => {
                             if (confirm('ต้องการยกเลิกรายการขายนี้หรือไม่?')) {
                               if (item.originalEgg) deleteEggSale(item.originalEgg.id);
@@ -499,7 +503,7 @@ export const AllSalesHistory: React.FC<AllSalesHistoryProps> = ({
                               if (item.originalGoc) deleteGocLibraSale(item.originalGoc.id);
                             }
                           }}
-                          className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 text-xs border border-rose-500/20 cursor-pointer"
+                          className="px-2 py-1 rounded-lg bg-rose-500/15 text-rose-300 hover:bg-rose-500/30 text-xs font-semibold border border-rose-500/30 cursor-pointer transition-all"
                           title="ลบรายการ"
                         >
                           🗑️ ลบ

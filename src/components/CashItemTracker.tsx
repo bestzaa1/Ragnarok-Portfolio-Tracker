@@ -44,7 +44,6 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
   onOpenEditPoints,
 }) => {
   const {
-    isAdmin,
     cashItems,
     cashSales,
     cashConfig,
@@ -346,20 +345,18 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
 
           {/* Top Right Remain Sale Badge */}
           <div className="flex items-center gap-3">
-            {isAdmin && (
-              <button
-                onClick={() => {
-                  if (confirm('ต้องการซิงค์ข้อมูลให้ตรงตามชีตของแถมคงเหลือ (ยอดรวม ฿13,420.00) หรือไม่?')) {
-                    syncFromPromotionSheet();
-                  }
-                }}
-                className="px-3 py-1.5 rounded-xl bg-dark-950/20 hover:bg-dark-950/40 text-dark-950 font-bold text-xs flex items-center gap-1.5 transition-colors border border-dark-950/20 cursor-pointer"
-                title="รีเซ็ต/ซิงค์ข้อมูลให้ตรงตามชีต 100%"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>ซิงค์ตามชีต (13,420)</span>
-              </button>
-            )}
+            <button
+              onClick={() => {
+                if (confirm('ต้องการซิงค์ข้อมูลให้ตรงตามชีตของแถมคงเหลือ (ยอดรวม ฿13,420.00) หรือไม่?')) {
+                  syncFromPromotionSheet();
+                }
+              }}
+              className="px-3 py-1.5 rounded-xl bg-dark-950/20 hover:bg-dark-950/40 text-dark-950 font-bold text-xs flex items-center gap-1.5 transition-colors border border-dark-950/20 cursor-pointer"
+              title="รีเซ็ต/ซิงค์ข้อมูลให้ตรงตามชีต 100%"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>ซิงค์ตามชีต (13,420)</span>
+            </button>
 
             <div className="px-4 py-1.5 rounded-xl bg-dark-950 text-white font-black text-sm sm:text-base border border-amber-300/40 shadow-md font-mono">
               <span className="text-amber-400 mr-1.5 text-xs font-semibold uppercase font-sans">Remain Sale:</span>
@@ -470,7 +467,9 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                 <th className="py-3 px-3.5 font-bold text-right border-r border-white/[0.06]">
                   Remain Sale
                 </th>
-                <th className="px-3 py-2 text-center text-xs font-semibold text-slate-400">จัดการ</th>
+                <th className="sticky right-0 z-20 bg-[#161a29] px-3 py-3 text-center text-xs font-bold text-amber-300 border-l border-white/[0.08] shadow-[-4px_0_12px_rgba(0,0,0,0.4)]">
+                  จัดการ
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
@@ -593,13 +592,14 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                         {remainSaleVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
 
-                      {/* Actions - Always Visible */}
-                      <td className="px-3 py-2 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-2">
+                      {/* Actions - Always Visible & Sticky Right */}
+                      <td className="sticky right-0 z-10 bg-[#12151f] group-hover:bg-[#181c29] px-3 py-2 text-center whitespace-nowrap border-l border-white/[0.08] shadow-[-4px_0_12px_rgba(0,0,0,0.4)]">
+                        <div className="flex items-center justify-center gap-1.5">
                           <button
+                            type="button"
                             onClick={() => onOpenSellItem(item)}
                             disabled={item.stockQty <= 0}
-                            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                               item.stockQty > 0
                                 ? 'bg-emerald-500/15 hover:bg-emerald-500 text-emerald-300 hover:text-dark-950 border border-emerald-500/30 shadow-sm'
                                 : 'bg-white/[0.02] text-slate-600 cursor-not-allowed border border-transparent'
@@ -610,20 +610,22 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                           </button>
 
                           <button
+                            type="button"
                             onClick={() => onOpenEditItem(item)}
-                            className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 text-xs border border-amber-500/20 cursor-pointer"
+                            className="px-2 py-1 rounded-lg bg-amber-500/15 text-amber-300 hover:bg-amber-500/30 text-xs font-semibold border border-amber-500/30 cursor-pointer transition-all"
                             title="แก้ไขรายการ"
                           >
                             ✏️ แก้ไข
                           </button>
 
                           <button
+                            type="button"
                             onClick={() => {
                               if (confirm(`ต้องการลบรายการ "${item.name}" หรือไม่?`)) {
                                 deleteCashItem(item.id);
                               }
                             }}
-                            className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 text-xs border border-rose-500/20 cursor-pointer"
+                            className="px-2 py-1 rounded-lg bg-rose-500/15 text-rose-300 hover:bg-rose-500/30 text-xs font-semibold border border-rose-500/30 cursor-pointer transition-all"
                             title="ลบรายการ"
                           >
                             🗑️ ลบ
@@ -742,21 +744,23 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
         </div>
 
         {/* Sales Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#161a29]/90 text-slate-300 border-b border-white/[0.08] select-none uppercase tracking-wider text-[11px]">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="bg-[#161a29]/95 text-slate-300 border-b border-white/[0.08] select-none uppercase tracking-wider text-[11px]">
               <tr>
-                <th className="py-3 px-4 font-semibold">รายการไอเทม</th>
-                <th className="py-3 px-4 font-semibold">หมวดหมู่</th>
-                <th className="py-3 px-4 font-semibold">เซิร์ฟเวอร์</th>
-                <th className="py-3 px-4 font-semibold">ชื่อลูกค้า</th>
-                <th className="py-3 px-4 font-semibold text-right">จำนวน</th>
-                <th className="py-3 px-4 font-semibold text-right">ราคาต่อหน่วย</th>
-                <th className="py-3 px-4 font-semibold text-right">ยอดรวม (THB)</th>
-                <th className="py-3 px-4 font-semibold text-center">สถานะชำระเงิน</th>
-                <th className="py-3 px-4 font-semibold">วันที่ / เวลา</th>
-                <th className="py-3 px-4 font-semibold">หมายเหตุ</th>
-                <th className="px-3 py-2 text-center text-xs font-semibold text-slate-400">จัดการ</th>
+                <th className="py-3 px-2.5 font-semibold">รายการไอเทม</th>
+                <th className="py-3 px-2 font-semibold">หมวดหมู่</th>
+                <th className="py-3 px-2 font-semibold">เซิร์ฟเวอร์</th>
+                <th className="py-3 px-2.5 font-semibold">ชื่อลูกค้า</th>
+                <th className="py-3 px-2 font-semibold text-right">จำนวน</th>
+                <th className="py-3 px-2 font-semibold text-right">ราคาต่อหน่วย</th>
+                <th className="py-3 px-2.5 font-semibold text-right">ยอดรวม (THB)</th>
+                <th className="py-3 px-2 font-semibold text-center">สถานะชำระเงิน</th>
+                <th className="py-3 px-2 font-semibold">วันที่ / เวลา</th>
+                <th className="py-3 px-2 font-semibold">หมายเหตุ</th>
+                <th className="sticky right-0 z-20 bg-[#161a29] px-3 py-3 text-center text-xs font-bold text-amber-300 border-l border-white/[0.08] shadow-[-4px_0_12px_rgba(0,0,0,0.4)]">
+                  จัดการ
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
@@ -769,44 +773,44 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                 </tr>
               ) : (
                 filteredSales.map((item) => (
-                  <tr key={item.id} className="hover:bg-white/[0.025] transition-colors">
+                  <tr key={item.id} className="hover:bg-white/[0.025] transition-colors group">
                     {/* Item Name */}
-                    <td className="py-3 px-4 font-bold text-white whitespace-nowrap">
+                    <td className="py-2.5 px-2.5 font-bold text-white whitespace-nowrap">
                       {item.itemName}
                     </td>
 
                     {/* Category */}
-                    <td className="py-3 px-4 whitespace-nowrap">
+                    <td className="py-2.5 px-2 whitespace-nowrap">
                       {item.category === 'PROMO_FREEBIE' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
                           🎁 ของแถม
                         </span>
                       ) : item.category === 'CASH_POINT' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/40">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/40">
                           💎 ขายพอยท์
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-sky-500/10 text-sky-300 border border-sky-500/30">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-500/10 text-sky-300 border border-sky-500/30">
                           🛒 ซื้อพอยท์
                         </span>
                       )}
                     </td>
 
                     {/* Server */}
-                    <td className="py-3 px-4 text-slate-300 whitespace-nowrap">
+                    <td className="py-2.5 px-2 text-slate-300 whitespace-nowrap">
                       {item.server}
                     </td>
 
                     {/* Customer */}
-                    <td className="py-3 px-4 font-medium text-white whitespace-nowrap">
+                    <td className="py-2.5 px-2.5 font-medium text-white whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5 text-slate-400" />
+                        <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         <span>{item.customerName}</span>
                       </div>
                     </td>
 
                     {/* Quantity */}
-                    <td className="py-3 px-4 text-right font-bold text-slate-200 font-mono">
+                    <td className="py-2.5 px-2 text-right font-bold text-slate-200 font-mono whitespace-nowrap">
                       {item.category === 'CASH_POINT' ? (
                         <span className="text-purple-300">
                           {item.quantity.toLocaleString()} <span className="text-[10px] text-slate-400 font-sans">pts</span>
@@ -817,7 +821,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                     </td>
 
                     {/* Unit Price */}
-                    <td className="py-3 px-4 text-right text-slate-300 font-mono">
+                    <td className="py-2.5 px-2 text-right text-slate-300 font-mono whitespace-nowrap">
                       {item.category === 'CASH_POINT' ? (
                         <span>฿{item.unitPrice}/pt</span>
                       ) : (
@@ -826,15 +830,16 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                     </td>
 
                     {/* Total Amount */}
-                    <td className="py-3 px-4 text-right font-black text-emerald-400 text-sm font-mono">
+                    <td className="py-2.5 px-2.5 text-right font-black text-emerald-400 text-sm font-mono whitespace-nowrap">
                       ฿{item.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
 
                     {/* Status Button */}
-                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                    <td className="py-2.5 px-2 text-center whitespace-nowrap">
                       <button
+                        type="button"
                         onClick={() => toggleCashSaleStatus(item.id)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                           item.status === 'Clear'
                             ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 shadow-emerald-glow'
                             : 'bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25'
@@ -856,7 +861,7 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                     </td>
 
                     {/* Date */}
-                    <td className="py-3 px-4 text-slate-400 whitespace-nowrap font-mono text-[11px]">
+                    <td className="py-2.5 px-2 text-slate-400 whitespace-nowrap font-mono text-[11px]">
                       {item.date ? new Date(item.date).toLocaleString('th-TH', {
                         day: '2-digit',
                         month: 'short',
@@ -867,25 +872,27 @@ export const CashItemTracker: React.FC<CashItemTrackerProps> = ({
                     </td>
 
                     {/* Note */}
-                    <td className="py-3 px-4 text-slate-400 max-w-[150px] truncate" title={item.note}>
+                    <td className="py-2.5 px-2 text-slate-400 max-w-[110px] truncate" title={item.note}>
                       {item.note || '-'}
                     </td>
 
-                    {/* Actions - Always Visible */}
-                    <td className="px-3 py-2 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-2">
+                    {/* Actions - Always Visible & Sticky Right */}
+                    <td className="sticky right-0 z-10 bg-[#12151f] group-hover:bg-[#181c29] px-3 py-2 text-center whitespace-nowrap border-l border-white/[0.08] shadow-[-4px_0_12px_rgba(0,0,0,0.4)]">
+                      <div className="flex items-center justify-center gap-1.5">
                         {/* ปุ่มแก้ไข */}
                         <button
+                          type="button"
                           onClick={() => handleEditSale(item)}
-                          className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 text-xs border border-amber-500/20 cursor-pointer"
+                          className="px-2 py-1 rounded-lg bg-amber-500/15 text-amber-300 hover:bg-amber-500/30 text-xs font-semibold border border-amber-500/30 cursor-pointer transition-all"
                           title="แก้ไขรายการ"
                         >
                           ✏️ แก้ไข
                         </button>
                         {/* ปุ่มลบ */}
                         <button
+                          type="button"
                           onClick={() => handleDeleteSale(item.id)}
-                          className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 text-xs border border-rose-500/20 cursor-pointer"
+                          className="px-2 py-1 rounded-lg bg-rose-500/15 text-rose-300 hover:bg-rose-500/30 text-xs font-semibold border border-rose-500/30 cursor-pointer transition-all"
                           title="ลบรายการ"
                         >
                           🗑️ ลบ

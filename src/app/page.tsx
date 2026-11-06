@@ -159,7 +159,7 @@ export default function HomePage() {
 
       {/* 2. Main Layout Column */}
       <div
-        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 w-full ${
+        className={`flex-1 min-w-0 flex flex-col min-h-screen transition-all duration-300 w-full ${
           isSidebarCollapsed ? 'md:pl-[78px]' : 'md:pl-[280px]'
         }`}
       >
